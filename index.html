@@ -1,0 +1,2437 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, 
+
+user-scalable=no">
+<title>SCIENCE ESCAPE: LOST EXPERIMENTS</title>
+<style>
+/* ================= BASE ================= */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --neon:#00f0ff;--neon2:#7b2fff;--neon3:#ff2fb3;--good:#39ff88;--bad:#ff3b5c;
+  --gold:#ffd23f;--bg0:#05070f;--bg1:#0a0f24;--glass:rgba(16,24,48,.72);
+  --glass2:rgba(30,42,80,.55);--line:rgba(0,240,255,.35);
+}
+html,body{height:100%}
+body{
+  font-family:'Segoe UI','Sarabun','Noto Sans Thai',Tahoma,sans-serif;
+  background:radial-gradient(1200px 800px at 70% -10%,#1b2450 0%,var(--bg1) 45%,var(--
+
+bg0) 100%);
+  color:#e8f4ff;overflow:hidden;touch-action:manipulation;
+}
+#game{position:fixed;inset:0;overflow:hidden}
+#game.shake{animation:shake .45s}
+@keyframes shake{0%,100%{transform:translate(0)}15%{transform:translate(-12px,6px)}
+
+30%{transform:translate(10px,-8px)}45%{transform:translate(-8px,-5px)}
+
+60%{transform:translate(9px,7px)}75%{transform:translate(-6px,3px)}
+
+90%{transform:translate(4px,-4px)}}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-
+
+index:999;transition:opacity .12s}
+#flash.on{opacity:.85}
+#particleCanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-
+
+items:center;justify-content:center;z-index:2;padding:14px;overflow-y:auto}
+.screen.active{display:flex}
+.hidden{display:none!important}
+/* ================= UI ATOMS ================= */
+.glass{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur
+
+(12px);border:1px solid var(--line);border-radius:16px;box-shadow:0 0 24px rgba
+
+(0,240,255,.12),inset 0 0 30px rgba(0,240,255,.04)}
+.btn{
+  display:inline-block;border:1px solid var(--line);border-radius:12px;cursor:pointer;
+  background:linear-gradient(135deg,rgba(0,240,255,.16),rgba(123,47,255,.16));
+  color:#eafcff;font-weight:700;letter-spacing:.5px;padding:13px 26px;font-size:1rem;
+  box-shadow:0 0 14px rgba(0,240,255,.25);transition:transform .12s,box-shadow 
+
+.12s;user-select:none;text-align:center;
+}
+.btn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 26px rgba(0,240,255,.5)}
+.btn:active{transform:scale(.96)}
+.btn.primary{background:linear-gradient(135deg,#00c6ff,#7b2fff);font-
+
+size:1.15rem;padding:15px 40px}
+.btn.danger{background:linear-gradient(135deg,rgba(255,59,92,.25),rgba
+
+(255,47,179,.2));border-color:rgba(255,59,92,.5)}
+.btn.gold{background:linear-gradient(135deg,#ffb300,#ff5e3a);border-color:rgba
+
+(255,210,63,.6)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.neon-text{background:linear-gradient(90deg,#00f0ff,#7b2fff,#ff2fb3,#00f0ff);background-
+
+size:300% 100%;-webkit-background-clip:text;background-
+
+clip:text;color:transparent;animation:flow 6s linear infinite}
+@keyframes flow{to{background-position:300% 0}}
+.bar{height:14px;border-radius:8px;background:rgba(255,255,255,.08);border:1px solid 
+
+rgba(255,255,255,.15);overflow:hidden;position:relative}
+.bar>.fill{height:100%;border-radius:8px;transition:width .6s cubic-bezier(.22,1,.36,1)}
+.fill.hp{background:linear-gradient(90deg,#39ff88,#00e5a0)}
+.fill.hp.low{background:linear-gradient(90deg,#ff3b5c,#ff8a3a)}
+.fill.exp{background:linear-gradient(90deg,#00f0ff,#7b2fff)}
+.fill.enemy{background:linear-gradient(90deg,#ff2fb3,#ff5e3a)}
+.fill.heat{background:linear-gradient(90deg,#ff8a3a,#ff3b5c)}
+.fill.press{background:linear-gradient(90deg,#00c6ff,#004e92)}
+.tag{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.72rem;font-
+
+weight:700;border:1px solid var(--line);background:rgba(0,240,255,.1)}
+/* ================= TITLE ================= */
+#screen-title{text-align:center}
+.logo-sub{letter-spacing:6px;color:#9fd8ff;font-size:.85rem;margin-bottom:6px}
+h1.logo{font-size:clamp(2rem,7vw,4.2rem);font-weight:900;line-height:1.05}
+.logo-tagline{margin:14px 0 30px;color:#cfe9ff;font-size:clamp
+
+(.9rem,2.4vw,1.15rem);font-style:italic;text-shadow:0 0 12px rgba(0,240,255,.4)}
+.title-menu{display:flex;flex-direction:column;gap:14px;width:min(320px,86vw)}
+.float-orb{position:absolute;border-radius:50%;filter:blur
+
+(2px);opacity:.6;animation:floaty 7s ease-in-out infinite;pointer-events:none}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-26px)}}
+/* ================= NAME ================= */
+#name-card{width:min(460px,94vw);padding:28px;text-align:center}
+#name-input{width:100%;padding:14px;border-radius:12px;border:1px solid var(--
+
+line);background:rgba(0,0,0,.35);color:#fff;font-size:1.1rem;text-
+
+align:center;margin:16px 0;outline:none}
+#name-input:focus{box-shadow:0 0 18px rgba(0,240,255,.4)}
+.scientist-avatar{width:130px;height:130px;margin:0 auto;animation:floaty 4s ease-in-out 
+
+infinite}
+/* ================= CUTSCENE ================= */
+#screen-cutscene{justify-content:flex-end;padding:0}
+#cs-stage{position:absolute;inset:0;display:flex;align-items:center;justify-
+
+content:center;overflow:hidden;transition:transform 2.5s ease}
+#cs-stage.zoom{transform:scale(1.6)}
+#cs-scene{width:100%;height:100%;display:flex;align-items:center;justify-
+
+content:center;flex-direction:column;gap:20px;transition:background 1s}
+#cs-visual{width:min(420px,80vw);height:min(300px,40vh);display:flex;align-
+
+items:center;justify-content:center;position:relative}
+#cs-bigtext{font-size:clamp(1.6rem,6vw,3.4rem);font-weight:900;text-align:center;text-
+
+shadow:0 0 30px var(--neon);animation:pulseGlow 1.6s ease-in-out infinite}
+@keyframes pulseGlow{0%,100%{text-shadow:0 0 18px var(--neon)}50%{text-shadow:0 0 44px 
+
+var(--neon),0 0 80px var(--neon2)}}
+#cs-warning{position:absolute;top:12%;left:50%;transform:translateX(-
+
+50%);color:#ff3b5c;font-weight:900;font-size:clamp(1.4rem,5vw,2.6rem);letter-
+
+spacing:4px;animation:blink .5s steps(2) infinite;display:none;text-align:center}
+@keyframes blink{50%{opacity:.15}}
+#cs-box{position:relative;width:min(760px,94vw);margin-bottom:5vh;padding:20px 22px 
+
+16px;z-index:5}
+#cs-speaker{position:absolute;top:-16px;left:18px;padding:4px 18px;border-
+
+radius:10px;background:linear-gradient(135deg,#00c6ff,#7b2fff);font-weight:800;font-
+
+size:.95rem;box-shadow:0 0 16px rgba(0,240,255,.5)}
+#cs-text{min-height:64px;font-size:clamp(1rem,2.6vw,1.2rem);line-
+
+height:1.65;color:#eafcff}
+#cs-text .cursor{display:inline-block;width:9px;background:var(--neon);animation:blink 
+
+.7s steps(2) infinite}
+#cs-controls{display:flex;justify-content:space-between;margin-top:12px;gap:10px}
+/* ================= HUD ================= */
+#hud{position:fixed;top:0;left:0;right:0;z-index:50;display:none;padding:8px 
+
+10px;gap:8px;align-items:center;flex-wrap:wrap;background:linear-gradient(180deg,rgba
+
+(5,8,18,.9),rgba(5,8,18,.55) 80%,transparent)}
+#hud.on{display:flex}
+.hud-chip{display:flex;align-items:center;gap:6px;padding:5px 12px;border-
+
+radius:20px;font-size:.8rem;font-weight:700}
+#hud .bar{width:90px;height:10px}
+.hud-right{margin-left:auto;display:flex;gap:8px}
+.icon-btn{width:38px;height:38px;border-radius:10px;display:flex;align-
+
+items:center;justify-content:center;font-size:1.1rem;cursor:pointer;padding:0}
+/* ================= MAP ================= */
+#screen-map{justify-content:flex-start;padding-top:64px}
+.map-title{margin:8px 0 16px;text-align:center}
+#map-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax
+
+(150px,1fr));gap:14px;width:min(960px,96vw);padding-bottom:30px}
+.area-card{position:relative;padding:18px 14px;border-radius:16px;cursor:pointer;text-
+
+align:center;transition:transform .2s,box-shadow .2s;overflow:hidden;min-
+
+height:150px;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.area-card:hover{transform:translateY(-4px) scale(1.02)}
+.area-card.locked{filter:grayscale(.9) brightness(.5);cursor:not-allowed}
+.area-card.cleared::after{content:"✓";position:absolute;top:8px;right:12px;font-
+
+size:1.4rem;color:var(--good);text-shadow:0 0 12px var(--good)}
+.area-card.current{animation:areaGlow 1.8s ease-in-out infinite}
+@keyframes areaGlow{0%,100%{box-shadow:0 0 14px rgba(0,240,255,.35)}50%{box-shadow:0 0 
+
+34px rgba(0,240,255,.8),0 0 60px rgba(123,47,255,.5)}}
+.area-num{font-size:.7rem;letter-spacing:3px;opacity:.8}
+.area-name{font-weight:900;font-size:1.05rem}
+.area-lock{font-size:1.6rem}
+/* ================= AREA SCENE ================= */
+#screen-area{justify-content:flex-start;padding-top:70px}
+#area-banner{width:min(720px,94vw);padding:18px;text-align:center;margin-bottom:16px}
+#area-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+#area-creatures{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding-
+
+bottom:30px}
+.creature-slot{width:120px;padding:12px 8px;text-align:center;border-radius:14px}
+.creature-slot .mini-svg{width:80px;height:80px;margin:0 auto}
+/* ================= BATTLE ================= */
+#screen-battle{justify-content:flex-start;padding:58px 10px 10px}
+#battle-stage{width:min(860px,98vw);position:relative;flex:1;min-
+
+height:280px;display:flex;flex-direction:column}
+#enemy-zone{position:relative;display:flex;justify-content:flex-end;align-items:flex-
+
+start;padding:10px 4% 0;min-height:180px}
+#player-zone{position:relative;display:flex;justify-content:flex-start;align-items:flex-
+
+end;padding:0 4% 6px;min-height:170px}
+.combatant{text-align:center;position:relative}
+.sprite-wrap{position:relative;display:inline-block}
+.sprite-wrap.hit{animation:hitFlash .4s}
+@keyframes hitFlash{0%{filter:brightness(3) saturate(0)}100%{filter:none}}
+.sprite-svg{filter:drop-shadow(0 0 18px rgba(0,240,255,.35))}
+.anim-float{animation:floaty 3.2s ease-in-out infinite}
+.anim-pulse{animation:pulseS 2s ease-in-out infinite}
+@keyframes pulseS{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.anim-spin-slow{animation:spinS 9s linear infinite}
+@keyframes spinS{to{transform:rotate(360deg)}}
+.anim-jitter{animation:jitter .18s linear infinite}
+@keyframes jitter{0%{transform:translate(0,0)}25%{transform:translate(2px,-2px)}
+
+50%{transform:translate(-2px,1px)}75%{transform:translate(1px,2px)}
+
+100%{transform:translate(0,0)}}
+.anim-laugh{animation:laugh .5s ease-in-out 3}
+@keyframes laugh{0%,100%{transform:rotate(0)}25%{transform:rotate(-6deg) translateY(-
+
+6px)}75%{transform:rotate(6deg)}}
+.anim-mock{animation:mock .6s ease-in-out 2}
+@keyframes mock{0%,100%{transform:translateX(0) scaleY(1)}30%{transform:translateX(-8px) 
+
+scaleY(.92)}60%{transform:translateX(8px) scaleY(.92)}}
+.anim-approve{animation:approve .55s ease-in-out 2}
+@keyframes approve{0%,100%{transform:translateY(0)}40%{transform:translateY(-14px) scale
+
+(1.05)}}
+.nameplate{margin-top:6px;font-weight:800;font-size:.95rem;text-shadow:0 0 10px rgba
+
+(0,240,255,.6)}
+.stat-plate{margin-top:6px;padding:8px 12px;min-width:170px;text-align:left;font-
+
+size:.78rem}
+.speech-bubble{position:absolute;bottom:105%;left:50%;transform:translateX(-
+
+50%);background:#fff;color:#111;font-weight:800;padding:9px 16px;border-
+
+radius:16px;white-space:nowrap;font-size:1rem;box-shadow:0 4px 18px rgba
+
+(0,0,0,.4);animation:bubblePop .3s cubic-bezier(.34,1.56,.64,1);z-index:20}
+.speech-bubble::after
+
+{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:9px 
+
+solid transparent;border-top-color:#fff}
+@keyframes bubblePop{from{transform:translateX(-50%) scale(0)}to{transform:translateX(-
+
+50%) scale(1)}}
+#mech-panel{width:min(500px,92vw);margin:4px auto;padding:10px 14px;text-
+
+align:center;font-size:.85rem}
+.circuit-nodes{display:flex;gap:12px;justify-content:center;margin-top:6px}
+.cnode{width:26px;height:26px;border-radius:50%;border:2px solid var(--
+
+line);background:rgba(255,255,255,.06);transition:all .3s}
+.cnode.on{background:var(--gold);box-shadow:0 0 16px var(--gold)}
+.core-dots{display:flex;gap:12px;justify-content:center;margin-top:6px}
+.core-dot{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 
+
+35% 35%,#b6ff6b,#2f9e44);box-shadow:0 0 14px #6bff8a;transition:all .4s}
+.core-dot.dead{background:#333;box-shadow:none;transform:scale(.7)}
+#battle-log{width:min(860px,98vw);margin:6px auto 0;padding:8px 14px;font-
+
+size:.82rem;max-height:64px;overflow-y:auto;color:#bfe6ff}
+#battle-log div{animation:logIn .3s}
+@keyframes logIn{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+#question-panel{width:min(860px,98vw);margin:8px auto 0;padding:16px}
+#q-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+#q-text{font-size:clamp(1rem,2.6vw,1.2rem);font-weight:700;margin-bottom:12px;line-
+
+height:1.5}
+#q-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){#q-choices{grid-template-columns:1fr}}
+.choice-btn{padding:13px 14px;border-radius:12px;border:1px solid var(--
+
+line);background:var(--glass2);color:#eafcff;font-size:.98rem;cursor:pointer;text-
+
+align:left;transition:all .15s;font-weight:600}
+.choice-btn:hover{background:rgba(0,240,255,.18);transform:scale(1.02)}
+.choice-btn.correct{background:rgba(57,255,136,.3);border-color:var(--good);box-shadow:0 
+
+0 16px rgba(57,255,136,.5)}
+.choice-btn.wrong{background:rgba(255,59,92,.3);border-color:var(--bad);box-shadow:0 0 
+
+16px rgba(255,59,92,.5)}
+.choice-btn:disabled{cursor:default}
+#q-explain{margin-top:10px;font-size:.88rem;color:#cfe9ff;background:rgba
+
+(0,0,0,.3);padding:10px 12px;border-radius:10px;border-left:3px solid var(--
+
+neon);display:none}
+#battle-actions{display:flex;gap:10px;justify-content:center;margin-top:10px;flex-
+
+wrap:wrap}
+.dmg-num{position:absolute;font-weight:900;font-size:1.6rem;pointer-
+
+events:none;animation:dmgFloat 1s forwards;z-index:30;text-shadow:0 0 10px currentColor}
+@keyframes dmgFloat{from{opacity:1;transform:translateY(0) scale(1.2)}to
+
+{opacity:0;transform:translateY(-70px) scale(.9)}}
+.beam{position:absolute;height:8px;border-radius:6px;transform-origin:left 
+
+center;pointer-events:none;z-index:25;animation:beamGo .45s forwards}
+@keyframes beamGo{0%{opacity:0;transform:scaleX(0)}30%{opacity:1;transform:scaleX(1)}
+
+100%{opacity:0;transform:scaleX(1)}}
+#result-banner{position:absolute;inset:0;display:none;align-items:center;justify-
+
+content:center;flex-direction:column;z-index:60;background:rgba(3,6,14,.75);backdrop-
+
+filter:blur(4px);text-align:center}
+#result-banner.on{display:flex}
+#result-text{font-size:clamp(1.8rem,7vw,3.4rem);font-weight:900;margin-bottom:18px}
+/* ================= CAPTURE FX ================= */
+#capsule-fx{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);z-
+
+index:55;display:none}
+#capsule-fx.on{display:block}
+.capsule{width:64px;height:84px;border-radius:32px;background:linear-gradient
+
+(180deg,rgba(0,240,255,.85),rgba(123,47,255,.85));border:3px solid #fff;box-shadow:0 0 
+
+34px var(--neon);animation:capsuleShake .55s ease-in-out 3}
+@keyframes capsuleShake{0%,100%{transform:rotate(0)}25%{transform:rotate(-14deg)}
+
+75%{transform:rotate(14deg)}}
+/* ================= COLLECTION / DB ================= */
+.panel-page{width:min(960px,96vw);max-height:78vh;overflow-y:auto;padding:20px}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax
+
+(150px,1fr));gap:12px;margin-top:14px}
+.mon-card{padding:12px;text-align:center;border-radius:14px}
+.mon-card .mini-svg{width:84px;height:84px;margin:0 auto 6px}
+.mon-card.unknown{filter:grayscale(1) brightness(.45)}
+.db-item{padding:14px;margin-bottom:10px;border-radius:12px}
+.db-item h4{color:var(--neon);margin-bottom:6px}
+.db-item.locked{opacity:.4}
+/* ================= END ================= */
+#screen-end{text-align:center}
+#end-stats{width:min(560px,94vw);padding:24px;margin-top:14px;text-align:left}
+#end-stats .row{display:flex;justify-content:space-between;padding:7px 4px;border-
+
+bottom:1px dashed rgba(255,255,255,.12);font-size:.95rem}
+#rank-badge{font-size:clamp(4rem,16vw,7rem);font-weight:900;animation:pulseGlow 1.4s 
+
+infinite}
+/* ================= MODAL ================= */
+.modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-
+
+content:center;background:rgba(2,4,10,.8);backdrop-filter:blur(6px);padding:16px}
+.modal.on{display:flex}
+.modal-card{width:min(440px,94vw);padding:26px;text-align:center}
+.modal-card h3{margin-bottom:12px}
+.modal-card p{color:#cfe9ff;margin-bottom:18px;line-height:1.6}
+.modal-card .btn{margin:4px}
+/* toast */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY
+
+(80px);z-index:300;padding:12px 24px;border-radius:12px;background:var(--
+
+glass);border:1px solid var(--line);font-weight:700;opacity:0;transition:all 
+
+.35s;backdrop-filter:blur(10px)}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:rgba(0,240,255,.3);border-radius:6px}
+.fade-in{animation:fadeIn .6s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+</style>
+<base target="_blank">
+</head>
+<body>
+<div id="game">
+<canvas id="particleCanvas"></canvas>
+<div id="flash"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-chip glass">🧪 <span id="hud-name">-</span></div>
+  <div class="hud-chip glass">Lv.<span id="hud-level">1</span></div>
+  <div class="hud-chip glass">❤️ <div class="bar"><div id="hud-hp" class="fill hp" 
+
+style="width:100%"></div></div></div>
+  <div class="hud-chip glass">⭐ <div class="bar"><div id="hud-exp" class="fill exp" 
+
+style="width:0%"></div></div></div>
+  <div class="hud-chip glass">💠 <span id="hud-score">0</span></div>
+  <div class="hud-chip glass">🔥x<span id="hud-combo">0</span></div>
+  <div class="hud-right">
+    <button class="icon-btn glass" id="btn-collection" title="Collection">📦</button>
+    <button class="icon-btn glass" id="btn-database" title="Science Database">📚</button>
+    <button class="icon-btn glass" id="btn-sound" title="Sound">🔊</button>
+    <button class="icon-btn glass" id="btn-music" title="Music">🎵</button>
+  </div>
+</div>
+
+<!-- TITLE -->
+<div class="screen active" id="screen-title">
+  <div class="float-orb" 
+
+style="width:120px;height:120px;left:8%;top:14%;background:radial-gradient(circle,rgba
+
+(0,240,255,.5),transparent 70%)"></div>
+  <div class="float-orb" 
+
+style="width:90px;height:90px;right:10%;top:60%;background:radial-gradient(circle,rgba
+
+(255,47,179,.5),transparent 70%);animation-delay:2s"></div>
+  <div class="float-orb" 
+
+style="width:70px;height:70px;left:16%;bottom:12%;background:radial-gradient(circle,rgba
+
+(123,47,255,.55),transparent 70%);animation-delay:4s"></div>
+  <div class="logo-sub">NOVA LAB PRESENTS</div>
+  <h1 class="logo neon-text">SCIENCE ESCAPE</h1>
+  <h1 class="logo neon-text" style="font-size:clamp(1.1rem,4vw,2rem)">LOST 
+
+EXPERIMENTS</h1>
+  <div class="logo-tagline">"จับพวกมันกลับมา ก่อนที่วิทยาศาสตร์จะเปลี่ยนโลกไปตลอดกาล"</div>
+  <div class="title-menu">
+    <button class="btn primary" id="btn-new">🚀 NEW GAME</button>
+    <button class="btn" id="btn-continue">▶ CONTINUE</button>
+    <button class="btn danger" id="btn-reset">🗑 RESET SAVE</button>
+  </div>
+</div>
+
+<!-- NAME -->
+<div class="screen" id="screen-name">
+  <div class="glass" id="name-card">
+    <h2 class="neon-text">นักวิทยาศาสตร์ฝึกหัด</h2>
+    <div class="scientist-avatar" id="avatar-svg"></div>
+    <p style="color:#9fd8ff">กรอกชื่อของคุณเพื่อเริ่มภารกิจ</p>
+    <input id="name-input" maxlength="16" placeholder="ชื่อของคุณ...">
+    <button class="btn primary" id="btn-start-mission">เริ่มภารกิจ ⚡</button>
+  </div>
+</div>
+
+<!-- CUTSCENE -->
+<div class="screen" id="screen-cutscene">
+  <div id="cs-stage">
+    <div id="cs-scene">
+      <div id="cs-visual"></div>
+      <div id="cs-bigtext"></div>
+    </div>
+  </div>
+  <div id="cs-warning">⚠ WARNING ⚠<div style="font-size:.5em" id="cs-warning-
+
+sub">CONTAINMENT FAILURE</div></div>
+  <div class="glass" id="cs-box">
+    <div id="cs-speaker">???</div>
+    <div id="cs-text"></div>
+    <div id="cs-controls">
+      <button class="btn danger hidden" id="cs-skip">SKIP ⏭</button>
+      <button class="btn primary" id="cs-next">NEXT ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAP -->
+<div class="screen" id="screen-map">
+  <div class="map-title">
+    <h2 class="neon-text">🗺 WORLD MAP</h2>
+    <p style="color:#9fd8ff;font-size:.9rem">เลือกพื้นที่เพื่อออกสำรวจ — จับสิ่งมีชีวิตให้ครบเพื่อปลดล็อก Boss</p>
+  </div>
+  <div id="map-grid"></div>
+</div>
+
+<!-- AREA -->
+<div class="screen" id="screen-area">
+  <div class="glass" id="area-banner">
+    <div class="area-num" id="area-num">AREA 1</div>
+    <h2 id="area-name" class="neon-text">NOVA LAB</h2>
+    <p id="area-desc" style="color:#cfe9ff;font-size:.9rem;margin-top:6px"></p>
+  </div>
+  <div id="area-actions">
+    <button class="btn primary" id="btn-explore">🔍 สำรวจพื้นที่</button>
+    <button class="btn gold" id="btn-boss">👹 ท้าทาย BOSS</button>
+    <button class="btn" id="btn-backmap">🗺 กลับแผนที่</button>
+  </div>
+  <div id="area-creatures"></div>
+</div>
+
+<!-- BATTLE -->
+<div class="screen" id="screen-battle">
+  <div id="battle-stage">
+    <div id="enemy-zone">
+      <div class="combatant" id="enemy-box">
+        <div class="sprite-wrap" id="enemy-sprite"></div>
+        <div class="nameplate" id="enemy-name">???</div>
+        <div class="glass stat-plate">
+          <div style="display:flex;justify-content:space-between"><span id="enemy-
+
+type">-</span><span>Lv.<b id="enemy-level">1</b></span></div>
+          <div class="bar" style="margin-top:5px"><div id="enemy-hp" class="fill enemy" 
+
+style="width:100%"></div></div>
+          <div id="enemy-hp-text" style="margin-top:3px;text-align:right"></div>
+        </div>
+      </div>
+    </div>
+    <div id="mech-panel" class="glass hidden"></div>
+    <div id="player-zone">
+      <div class="combatant" id="player-box">
+        <div class="sprite-wrap" id="player-sprite"></div>
+        <div class="nameplate" id="player-name">คุณ</div>
+        <div class="glass stat-plate">
+          <div style="display:flex;justify-content:space-between"><span>❤️ HP</span><span 
+
+id="player-hp-text"></span></div>
+          <div class="bar" style="margin-top:5px"><div id="player-hp" class="fill hp" 
+
+style="width:100%"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-top:5px"><span>⚡ 
+
+SP <b id="player-sp"></b></span><span>🔥 x<b id="player-combo">0</b></span></div>
+        </div>
+      </div>
+    </div>
+    <div id="capsule-fx"><div class="capsule"></div></div>
+    <div id="result-banner"><div id="result-text" class="neon-text"></div><div 
+
+id="result-sub" style="color:#cfe9ff;margin-bottom:16px"></div><button class="btn 
+
+primary" id="result-ok">ตกลง</button></div>
+  </div>
+  <div id="battle-log" class="glass"></div>
+  <div id="question-panel" class="glass">
+    <div id="q-meta"></div>
+    <div id="q-text"></div>
+    <div id="q-choices"></div>
+    <div id="q-explain"></div>
+    <div id="battle-actions">
+      <button class="btn gold hidden" id="btn-capture">🎯 CAPTURE</button>
+      <button class="btn hidden" id="btn-nextq">คำถามถัดไป ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- COLLECTION -->
+<div class="screen" id="screen-collection">
+  <div class="glass panel-page">
+    <h2 class="neon-text">📦 COLLECTION <span id="col-count" style="font-
+
+size:.8rem;color:#9fd8ff"></span></h2>
+    <div class="card-grid" id="collection-grid"></div>
+    <div style="text-align:center;margin-top:16px"><button class="btn" id="col-close">ปิด 
+
+✕</button></div>
+  </div>
+</div>
+
+<!-- DATABASE -->
+<div class="screen" id="screen-database">
+  <div class="glass panel-page">
+    <h2 class="neon-text">📚 SCIENCE DATABASE <span id="db-count" style="font-
+
+size:.8rem;color:#9fd8ff"></span></h2>
+    <div id="db-list" style="margin-top:12px"></div>
+    <div style="text-align:center;margin-top:16px"><button class="btn" id="db-close">ปิด 
+
+✕</button></div>
+  </div>
+</div>
+
+<!-- END -->
+<div class="screen" id="screen-end">
+  <h2 class="neon-text">🏆 MISSION COMPLETE</h2>
+  <div id="rank-badge" class="neon-text">S</div>
+  <div class="glass" id="end-stats"></div>
+  <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;justify-
+
+content:center">
+    <button class="btn primary" id="btn-end-map">🗺 กลับสู่แผนที่</button>
+    <button class="btn danger" id="btn-end-new">🚀 เริ่มเกมใหม่</button>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal" id="modal-cycle">
+  <div class="glass modal-card">
+    <h3 class="neon-text">🎓 SCIENCE DATABASE COMPLETED!</h3>
+    <p>คุณตอบคำถามครบทุกข้อแล้ว!<br>เริ่ม Question Cycle ใหม่หรือไม่?</p>
+    <button class="btn primary" id="cycle-yes">เริ่ม Cycle ใหม่ 🔄</button>
+  </div>
+</div>
+<div class="modal" id="modal-defeat">
+  <div class="glass modal-card">
+    <h3 style="color:var(--bad)">💥 คุณถูกโจมตีจนหมดพลัง!</h3>
+    <p>NOVA LAB ส่งทีมกู้ภัยมารับตัวคุณกลับ<br>พลังงานถูกฟื้นฟูแล้ว ลองอีกครั้งนะ!</p>
+    <button class="btn primary" id="defeat-ok">กลับสู่แผนที่ 🗺</button>
+  </div>
+</div>
+<div class="modal" id="modal-confirm">
+  <div class="glass modal-card">
+    <h3 id="confirm-title">ยืนยัน</h3>
+    <p id="confirm-text"></p>
+    <button class="btn danger" id="confirm-yes">ยืนยัน</button>
+    <button class="btn" id="confirm-no">ยกเลิก</button>
+  </div>
+</div>
+<div id="toast"></div>
+</div>
+<script>
+"use strict";
+/* ============================================================
+   SCIENCE ESCAPE: LOST EXPERIMENTS — Single-file game
+   ============================================================ */
+/* ================= QUESTION DATABASE (150) ================= */
+const QUESTIONS=[
+{id:1,cat:"physics",diff:"easy",q:"แสงเดินทางในสุญญากาศด้วยความเร็วประมาณเท่าใด",c:["300 กม./วินาที","3,000 กม
+
+./วินาที","300,000 กม./วินาที","30 ล้าน กม./วินาที"],a:2,ex:"แสงเดินทางในสุญญากาศเร็วประมาณ 300,000 กิโลเมตรต่อวินาที เป็นความเร็วสูงสุดใน
+
+จักรวาล"},
+{id:2,cat:"physics",diff:"easy",q:"เสียงเดินทางผ่านตัวกลางชนิดใดได้เร็วที่สุด",c:["แก๊ส","ของเหลว","ของ
+
+แข็ง","สุญญากาศ"],a:2,ex:"อนุภาคของแข็งอยู่ใกล้กันมาก การสั่นสะเทือนจึงถ่ายทอดได้เร็วกว่าของเหลวและแก๊ส และเสียงเดินทางในสุญญากาศไม่ได้"},
+{id:3,cat:"physics",diff:"easy",q:"หน่วยวัดพลังงานในระบบ SI คือข้อใด",c:["นิวตัน","จูล","วัตต์","โวลต์"],a:1,ex:"พลังงาน
+
+และงานวัดเป็นจูล (J) ส่วนวัตต์เป็นหน่วยของกำลัง นิวตันเป็นหน่วยของแรง"},
+{id:4,cat:"physics",diff:"medium",q:"แสงเกิดการหักเหเมื่อใด",c:["เมื่อเดินทางในสุญญากาศ","เมื่อผ่านตัวกลางที่มีความหนาแน่น
+
+ต่างกัน","เมื่อชนกระจกเงา","เมื่อผ่านตัวกลางชนิดเดียวกัน"],a:1,ex:"แสงเปลี่ยนความเร็วเมื่อเข้าสู่ตัวกลางที่หนาแน่นต่างกัน ทำให้ทิศทางเบนไป เช่น ตะเกียบ
+
+ในน้ำดูงอ"},
+{id:5,cat:"physics",diff:"medium",q:"คลื่นแม่เหล็กไฟฟ้าชนิดใดมีความยาวคลื่นสั้นที่สุด",c:["คลื่นวิทยุ","ไมโครเวฟ","รังสี
+
+เอกซ์","รังสีแกมมา"],a:3,ex:"รังสีแกมมามีความยาวคลื่นสั้นที่สุดและพลังงานสูงที่สุดในสเปกตรัมแม่เหล็กไฟฟ้า"},
+{id:6,cat:"physics",diff:"medium",q:"เลนส์นูนใช้แก้ไขปัญหาสายตาแบบใด",c:["สายตาสั้น","สายตายาว","สายตาเอียง","ต้อ
+
+กระจก"],a:1,ex:"สายตายาวภาพตกหลังเรตินา เลนส์นูนช่วยรวมแสงให้ภาพตกบนเรตินาพอดี"},
+{id:7,cat:"physics",diff:"easy",q:"เสียงที่สะท้อนกลับมาจากผนังหรือหน้าผาเรียกว่าอะไร",c:["เสียงก้อง","เสียงดัง","เสียงแหลม","เสียง
+
+เบา"],a:0,ex:"เสียงก้อง (Echo) เกิดจากการสะท้อนของคลื่นเสียงกลับมายังผู้ฟัง"},
+{id:8,cat:"physics",diff:"medium",q:"วัตถุสีแดงดูเป็นสีแดงเพราะเหตุใด",c:["ดูดกลืนแสงสีแดง","สะท้อนแสงสีแดง","แผ่แสงสีแดงออก
+
+มา","หักเหแสงสีแดง"],a:1,ex:"วัตถุสะท้อนแสงความยาวคลื่นช่วงสีแดงและดูดกลืนสีอื่น ตาจึงรับรู้เป็นสีแดง"},
+{id:9,cat:"physics",diff:"easy",q:"หน่วยวัดความถี่ของคลื่นคือข้อใด",c:["เฮิรตซ์","เดซิเบล","จูล","แอมแปร์"],a:0,ex:"ความถี่
+
+วัดเป็นเฮิรตซ์ (Hz) หมายถึงจำนวนรอบคลื่นต่อวินาที"},
+{id:10,cat:"physics",diff:"easy",q:"น้ำหนักของวัตถุบนดวงจันทร์เป็นอย่างไรเมื่อเทียบกับบนโลก",c:["เท่ากัน","มากกว่า","น้อย
+
+กว่า","เป็นศูนย์"],a:2,ex:"ดวงจันทร์มีแรงโน้มถ่วงประมาณ 1/6 ของโลก น้ำหนักจึงน้อยกว่า แต่มวลเท่าเดิม"},
+{id:11,cat:"chemistry",diff:"easy",q:"สูตรเคมีของน้ำคือข้อใด",c:["CO2","H2O","O2","NaCl"],a:1,ex:"
+
+โมเลกุลน้ำประกอบด้วยไฮโดรเจน 2 อะตอมและออกซิเจน 1 อะตอม (H2O)"},
+{id:12,cat:"chemistry",diff:"easy",q:"ธาตุที่มีสัญลักษณ์ O คือธาตุใด",c:["
+
+ทอง","ออกซิเจน","ออสเมียม","อาร์กอน"],a:1,ex:"O ย่อมาจาก Oxygen (ออกซิเจน) แก๊สที่จำเป็นต่อการหายใจของสิ่งมีชีวิต"},
+{id:13,cat:"chemistry",diff:"easy",q:"สารละลายที่มีค่า pH น้อยกว่า 7 มีสมบัติเป็นอย่างไร",c:["เป็นเบส","เป็นกรด","เป็น
+
+กลาง","เป็นเกลือ"],a:1,ex:"pH ต่ำกว่า 7 เป็นกรด เท่ากับ 7 เป็นกลาง และมากกว่า 7 เป็นเบส"},
+{id:14,cat:"chemistry",diff:"easy",q:"พืชใช้แก๊สชนิดใดในการสังเคราะห์ด้วยแสง",c:["ออกซิเจน","ไนโตรเจน","คาร์บอน
+
+ไดออกไซด์","ไฮโดรเจน"],a:2,ex:"พืชดูดคาร์บอนไดออกไซด์ ใช้น้ำและแสงสร้างน้ำตาลกลูโคส พร้อมปล่อยออกซิเจน"},
+{id:15,cat:"chemistry",diff:"medium",q:"ธาตุที่พบมากที่สุดในเปลือกโลกคือข้อใด",c:["
+
+เหล็ก","ซิลิคอน","อะลูมิเนียม","ออกซิเจน"],a:3,ex:"ออกซิเจนคิดเป็นเกือบครึ่งหนึ่งของมวลเปลือกโลก เพราะเป็นองค์ประกอบของหินและแร่ส่วนมาก"},
+{id:16,cat:"chemistry",diff:"easy",q:"เกลือแกงมีสูตรเคมีว่าอย่างไร",c:
+
+["KCl","NaCl","CaCO3","HCl"],a:1,ex:"เกลือแกงคือโซเดียมคลอไรด์ (NaCl) เกิดจากโซเดียมรวมกับคลอรีน"},
+{id:17,cat:"chemistry",diff:"medium",q:"โลหะชนิดใดเป็นของเหลวที่อุณหภูมิห้อง",c:["เหล็ก","อะลูมิเนียม","ปรอท","ทอง
+
+แดง"],a:2,ex:"ปรอท (Mercury, Hg) เป็นโลหะชนิดเดียวที่เป็นของเหลวที่อุณหภูมิห้อง"},
+{id:18,cat:"chemistry",diff:"medium",q:"ปฏิกิริยาเคมีที่ดูดความร้อนจากสิ่งแวดล้อมเรียกว่าอะไร",c:["ปฏิกิริยาคายความ
+
+ร้อน","ปฏิกิริยาดูดความร้อน","ปฏิกิริยาเผาไหม้","ปฏิกิริยาสะเทิน"],a:1,ex:"ปฏิกิริยาดูดความร้อน (Endothermic) รับพลังงานความร้อนเข้า ทำให้รอบ 
+
+ๆ เย็นลง"},
+{id:19,cat:"chemistry",diff:"easy",q:"อนุภาคที่เล็กที่สุดของธาตุที่ยังคงสมบัติของธาตุนั้นคืออะไร",c:["
+
+โมเลกุล","อะตอม","นิวตรอน","ไอออน"],a:1,ex:"อะตอมคือหน่วยย่อยที่เล็กที่สุดของธาตุที่ยังมีสมบัติทางเคมีของธาตุนั้น"},
+{id:20,cat:"chemistry",diff:"medium",q:"กรดที่ทำให้มะนาวมีรสเปรี้ยวคือกรดใด",c:["กรดซัลฟิวริก","กรดไนตริก","กรดซิ
+
+ทริก","กรดอะซีติก"],a:2,ex:"มะนาวและผลไม้ตระกูลส้มมีกรดซิทริก (Citric acid) ให้รสเปรี้ยว"},
+{id:21,cat:"biology",diff:"easy",q:"หน่วยย่อยที่เล็กที่สุดของสิ่งมีชีวิตคืออะไร",c:["อวัยวะ","เนื้อ
+
+เยื่อ","เซลล์","อะตอม"],a:2,ex:"เซลล์เป็นหน่วยพื้นฐานของสิ่งมีชีวิตทุกชนิด ตั้งแต่แบคทีเรียจนถึงมนุษย์"},
+{id:22,cat:"biology",diff:"easy",q:"อวัยวะใดทำหน้าที่สูบฉีดเลือดไปทั่วร่างกาย",c:["ปอด","ตับ","หัวใจ","ไต"],a:2,ex:"หัวใจ
+
+เป็นกล้ามเนื้อที่หดตัวสูบฉีดเลือดผ่านหลอดเลือดไปเลี้ยงทุกส่วนของร่างกาย"},
+{id:23,cat:"biology",diff:"easy",q:"พืชสร้างอาหารด้วยกระบวนการใด",c:["การหายใจ","การสังเคราะห์ด้วยแสง","การย่อย
+
+อาหาร","การคายน้ำ"],a:1,ex:"การสังเคราะห์ด้วยแสงใช้แสง น้ำ และคาร์บอนไดออกไซด์สร้างน้ำตาลและออกซิเจน"},
+{id:24,cat:"biology",diff:"easy",q:"สารพันธุกรรมหลักในเซลล์ของสิ่งมีชีวิตคืออะไร",c:["RNA","DNA","ATP","
+
+โปรตีน"],a:1,ex:"DNA เก็บรหัสพันธุกรรมที่กำหนดลักษณะของสิ่งมีชีวิตและถ่ายทอดสู่รุ่นลูก"},
+{id:25,cat:"biology",diff:"easy",q:"สัตว์เลี้ยงลูกด้วยนมมีลักษณะเด่นข้อใด",c:["วางไข่","มีเกล็ด","เลี้ยงลูกด้วยนม","หายใจด้วย
+
+เหงือก"],a:2,ex:"สัตว์เลี้ยงลูกด้วยนมมีต่อมน้ำนม เช่น มนุษย์ วาฬ และค้างคาว"},
+{id:26,cat:"biology",diff:"easy",q:"อวัยวะที่แลกเปลี่ยนแก๊สออกซิเจนและคาร์บอนไดออกไซด์ในมนุษย์คืออะไร",c:["
+
+หัวใจ","ปอด","กระเพาะ","ตับ"],a:1,ex:"ปอดมีถุงลมที่แลกเปลี่ยนออกซิเจนเข้าสู่เลือดและนำคาร์บอนไดออกไซด์ออก"},
+{id:27,cat:"biology",diff:"medium",q:"จุลินทรีย์ในลำไส้ที่ช่วยย่อยอาหารและผลิตวิตามินคืออะไร",c:["ไวรัส","แบคทีเรีย","เชื้อ
+
+รา","โปรโตซัว"],a:1,ex:"แบคทีเรียในลำไส้ เช่น แลคโตบาซิลลัส ช่วยย่อยอาหารและสร้างวิตามินบางชนิด"},
+{id:28,cat:"biology",diff:"medium",q:"การหายใจระดับเซลล์เพื่อผลิตพลังงานเกิดที่ส่วนใดของเซลล์",c:["นิวเคลียส","ไรโบโซม","ไม
+
+โทคอนเดรีย","คลอโรพลาสต์"],a:2,ex:"ไมโทคอนเดรียเปลี่ยนพลังงานจากน้ำตาลเป็น ATP ที่เซลล์ใช้งานได้"},
+{id:29,cat:"biology",diff:"easy",q:"สิ่งมีชีวิตที่ผลิตอาหารเองได้ในห่วงโซ่อาหารเรียกว่าอะไร",c:["ผู้บริโภค","ผู้ผลิต","ผู้ย่อย
+
+สลาย","ผู้ล่า"],a:1,ex:"ผู้ผลิต เช่น พืช สร้างอาหารจากแสงอาทิตย์ เป็นจุดเริ่มต้นของห่วงโซ่อาหาร"},
+{id:30,cat:"biology",diff:"medium",q:"เลือดของมนุษย์มีสีแดงเพราะสารใด",c:["คลอโรฟิลล์","ฮีโมโกลบิน","เมลานิน","คารอทีน
+
+"],a:1,ex:"ฮีโมโกลบินในเม็ดเลือดแดงมีเหล็กจับกับออกซิเจน ทำให้เลือดเป็นสีแดง"},
+{id:31,cat:"space",diff:"easy",q:"ดาวเคราะห์ที่ใหญ่ที่สุดในระบบสุริยะคือดวงใด",c:["โลก","ดาวเสาร์","ดาวพฤหัสบดี","ดาว
+
+เนปจูน"],a:2,ex:"ดาวพฤหัสบดีมีเส้นผ่านศูนย์กลางประมาณ 11 เท่าของโลก ใหญ่ที่สุดในระบบสุริยะ"},
+{id:32,cat:"space",diff:"easy",q:"ดวงจันทร์โคจรรอบวัตถุใด",c:["ดวงอาทิตย์","โลก","ดาวอังคาร","ดาวพุธ"],a:1,ex:"ดวง
+
+จันทร์เป็นบริวารธรรมชาติของโลก ใช้เวลาโคจรรอบโลกประมาณ 27.3 วัน"},
+{id:33,cat:"space",diff:"medium",q:"แสงจากดวงอาทิตย์ใช้เวลาเดินทางมาถึงโลกประมาณเท่าใด",c:["8 วินาที","8 นาที","8 
+
+ชั่วโมง","8 วัน"],a:1,ex:"ระยะทางโลก-ดวงอาทิตย์ประมาณ 150 ล้านกิโลเมตร แสงใช้เวลาเดินทางราว 8 นาที 20 วินาที"},
+{id:34,cat:"space",diff:"medium",q:"ชั้นบรรยากาศที่ช่วยดูดซับรังสีอัลตราไวโอเลตจากดวงอาทิตย์คือชั้นใด",c:["
+
+ไนโตรเจน","โอโซน","คาร์บอนไดออกไซด์","ไอน้ำ"],a:1,ex:"ชั้นโอโซนในสตราโทสเฟียร์ดูดซับรังสียูวีที่เป็นอันตรายต่อสิ่งมีชีวิต"},
+{id:35,cat:"space",diff:"easy",q:"การปะทุของภูเขาไฟเกิดจากอะไร",c:["แผ่นดินไหว","แมกมาใต้เปลือกโลกดันขึ้นสู่ผิวโลก","พายุ
+
+หมุน","น้ำทะเลหนุนสูง"],a:1,ex:"แมกมาที่มีแก๊สสะสมใต้เปลือกโลกดันตัวขึ้นจนปะทุออกมาเป็นลาวา"},
+{id:36,cat:"space",diff:"easy",q:"ดาวเคราะห์ที่โคจรใกล้ดวงอาทิตย์ที่สุดคือดวงใด",c:["ดาวศุกร์","ดาวพุธ","โลก","ดาว
+
+อังคาร"],a:1,ex:"ดาวพุธอยู่ใกล้ดวงอาทิตย์ที่สุด ใช้เวลาโคจรเพียง 88 วัน"},
+{id:37,cat:"space",diff:"medium",q:"กาแล็กซีที่ระบบสุริยะของเราอาศัยอยู่ชื่ออะไร",c:["แอนโดรเมดา","ทางช้างเผือก","วง
+
+แหวน","สามเหลี่ยม"],a:1,ex:"ระบบสุริยะอยู่ในกาแล็กซีทางช้างเผือก (Milky Way) ซึ่งมีดาวหลายแสนล้านดวง"},
+{id:38,cat:"space",diff:"medium",q:"ฤดูกาลบนโลกเกิดจากสาเหตุใด",c:["โลกอยู่ใกล้-ไกลดวงอาทิตย์","แกนโลกเอียงขณะ
+
+โคจรรอบดวงอาทิตย์","จำนวนจุดดับบนดวงอาทิตย์","ดวงจันทร์บังแสง"],a:1,ex:"แกนโลกเอียงประมาณ 23.5 องศา ทำให้แต่ละซีกโลกรับแสงต่างกันตามตำแหน่ง
+
+การโคจร"},
+{id:39,cat:"space",diff:"medium",q:"หินที่เกิดจากลาวาเย็นตัวแข็งตัวเรียกว่าอะไร",c:["หินตะกอน","หินอัคนี","หินแปร","หิน
+
+ปูน"],a:1,ex:"หินอัคนีเกิดจากแมกมาหรือลาวาเย็นตัว เช่น หินบะซอลต์และหินแกรนิต"},
+{id:40,cat:"space",diff:"easy",q:"ในวัฏจักรน้ำ ไอน้ำในอากาศกลั่นตัวกลายเป็นอะไร",c:["หิมะ","เมฆและหยดน้ำ","ลม","แม่
+
+น้ำ"],a:1,ex:"ไอน้ำกลั่นตัวรอบฝุ่นละอองในอากาศเกิดเป็นเมฆ เมื่อหยดน้ำหนักพอก็ตกเป็นฝน"},
+{id:41,cat:"energy",diff:"easy",q:"พลังงานที่ได้จากดวงอาทิตย์เรียกว่าอะไร",c:["พลังงานลม","พลังงานแสงอาทิตย์","พลังงาน
+
+น้ำ","พลังงานเชื้อเพลิง"],a:1,ex:"พลังงานแสงอาทิตย์เป็นพลังงานหมุนเวียนที่เปลี่ยนเป็นไฟฟ้าได้ด้วยแผงโซลาร์เซลล์"},
+{id:42,cat:"energy",diff:"easy",q:"พลังงานจลน์คือพลังงานที่เกี่ยวกับอะไร",c:["ความสูง","การเคลื่อนที่","ความ
+
+ร้อน","แสง"],a:1,ex:"วัตถุที่เคลื่อนที่มีพลังงานจลน์ ยิ่งมวลมากและเร็วมาก พลังงานจลน์ยิ่งมาก"},
+{id:43,cat:"energy",diff:"medium",q:"พลังงานศักย์โน้มถ่วงของวัตถุขึ้นกับปัจจัยใด",c:["สีของวัตถุ","ตำแหน่งหรือความสูงและ
+
+มวล","อุณหภูมิ","รูปร่าง"],a:1,ex:"พลังงานศักย์โน้มถ่วง = mgh ยิ่งมวลมากและอยู่สูง พลังงานศักย์ยิ่งมาก"},
+{id:44,cat:"energy",diff:"medium",q:"กฎการอนุรักษ์พลังงานกล่าวว่าอย่างไร",c:["พลังงานสร้างขึ้นใหม่ได้","พลังงานสูญหาย
+
+ได้","พลังงานไม่สูญหาย แต่เปลี่ยนรูปได้","พลังงานมีได้เฉพาะในโลหะ"],a:2,ex:"พลังงานไม่ถูกสร้างหรือทำลาย แต่เปลี่ยนจากรูปหนึ่งเป็นอีกรูปหนึ่งได้"},
+{id:45,cat:"energy",diff:"easy",q:"โรงไฟฟ้าพลังน้ำเปลี่ยนพลังงานรูปใดเป็นไฟฟ้า",c:["พลังงานเคมี","พลังงานจลน์ของน้ำที่
+
+ไหล","พลังงานแสง","พลังงานนิวเคลียร์"],a:1,ex:"น้ำจากที่สูงไหลผ่านกังหัน พลังงานศักย์และจลน์หมุนเครื่องกำเนิดไฟฟ้า"},
+{id:46,cat:"energy",diff:"medium",q:"หน่วยที่ใช้คิดค่าไฟฟ้าในบ้านเรือนคือข้อใด",c:["
+
+โวลต์","แอมแปร์","กิโลวัตต์-ชั่วโมง","โอห์ม"],a:2,ex:"กิโลวัตต์-ชั่วโมง (kWh) หรือ 'หน่วย' คือพลังงานไฟฟ้าที่ใช้ 1 กิโลวัตต์นาน 1 ชั่วโมง"},
+{id:47,cat:"energy",diff:"easy",q:"พลังงานลมผลิตไฟฟ้าโดยใช้อุปกรณ์ใด",c:["แผงโซลาร์","กังหันลม","เครื่องยนต์
+
+ดีเซล","แบตเตอรี่"],a:1,ex:"กังหันลมเปลี่ยนพลังงานจลน์ของลมเป็นพลังงานไฟฟ้า"},
+{id:48,cat:"energy",diff:"easy",q:"พลังงานจากอาหารที่ร่างกายใช้นิยมวัดเป็นหน่วยใด",c:["แคลอรี","โวลต์","เฮิรตซ์","นิ
+
+วตัน"],a:0,ex:"พลังงานในอาหารวัดเป็นแคลอรีหรือกิโลแคลอรี (ในระบบ SI คือจูล)"},
+{id:49,cat:"energy",diff:"medium",q:"พลังงานความร้อนจากใต้พื้นผิวโลกเรียกว่าอะไร",c:["พลังงานลม","พลังงานความร้อนใต้
+
+พิภพ","พลังงานชีวมวล","พลังงานไฮโดรเจน"],a:1,ex:"พลังงานความร้อนใต้พิภพ (Geothermal) ใช้ความร้อนจากใต้โลกผลิตไอน้ำหมุนกังหัน"},
+{id:50,cat:"energy",diff:"easy",q:"ข้อใดเป็นเชื้อเพลิงฟอสซิลทั้งหมด",c:["ถ่านหิน น้ำมัน ก๊าซธรรมชาติ","ไม้ แสงอาทิตย์ ลม","น้ำ 
+
+ลม คลื่น","แบตเตอรี่ ไฮโดรเจน แสง"],a:0,ex:"เชื้อเพลิงฟอสซิลเกิดจากซากสิ่งมีชีวิตโบราณ ได้แก่ ถ่านหิน น้ำมัน และก๊าซธรรมชาติ"},
+{id:51,cat:"environment",diff:"easy",q:"ภาวะโลกร้อนเกิดจากการสะสมของแก๊สชนิดใดเป็นหลัก",c:["ออกซิเจน","คาร์บอน
+
+ไดออกไซด์และแก๊สเรือนกระจก","ไนโตรเจน","ฮีเลียม"],a:1,ex:"แก๊สเรือนกระจก เช่น CO2 และมีเทน กักเก็บความร้อนในบรรยากาศทำให้โลกอุ่นขึ้น"},
+{id:52,cat:"environment",diff:"easy",q:"หลัก 3R ในการจัดการขยะได้แก่ข้อใด",c:["Read Run Rest","Reduce 
+
+Reuse Recycle","Red River Rain","Rank Rate Rule"],a:1,ex:"Reduce ลดการใช้ Reuse ใช้ซ้ำ Recycle 
+
+นำกลับมาแปรรูปใหม่"},
+{id:53,cat:"environment",diff:"easy",q:"การปลูกป่าช่วยลดภาวะโลกร้อนได้อย่างไร",c:["ปล่อยคาร์บอนไดออกไซด์","ดูดซับ
+
+คาร์บอนไดออกไซด์ผ่านการสังเคราะห์แสง","เพิ่มฝุ่นในอากาศ","ลดปริมาณออกซิเจน"],a:1,ex:"ต้นไม้ดูด CO2 มาสังเคราะห์แสงและกักเก็บคาร์บอนไว้ในลำ
+
+ต้น"},
+{id:54,cat:"environment",diff:"medium",q:"ขยะพลาสติกโดยทั่วไปใช้เวลาย่อยสลายตามธรรมชาติประมาณเท่าใด",c:["1 
+
+สัปดาห์","1 ปี","หลายสิบถึงหลายร้อยปี","ไม่เคยย่อยสลายเลย"],a:2,ex:"พลาสติกย่อยสลายช้ามาก บางชนิดใช้เวลาหลายร้อยปี จึงสะสมเป็นปัญหาสิ่งแวดล้อม"},
+{id:55,cat:"environment",diff:"medium",q:"PM2.5 คืออะไร",c:["แก๊สพิษจากโรงงาน","ฝุ่นละอองขนาดไม่เกิน 2.5 
+
+ไมครอน","น้ำเสียจากชุมชน","เสียงดังเกินมาตรฐาน"],a:1,ex:"PM2.5 คือฝุ่นขนาดเล็กมากที่เข้าสู่ปอดและกระแสเลือดได้ เป็นอันตรายต่อสุขภาพ"},
+{id:56,cat:"environment",diff:"easy",q:"ระบบนิเวศ (Ecosystem) หมายถึงอะไร",c:["เฉพาะพืชในพื้นที่","ความสัมพันธ์
+
+ระหว่างสิ่งมีชีวิตกับสิ่งแวดล้อม","เฉพาะสัตว์ป่า","ตึกและถนน"],a:1,ex:"ระบบนิเวศครอบคลุมสิ่งมีชีวิต น้ำ ดิน อากาศ และปฏิสัมพันธ์ทั้งหมดในพื้นที่"},
+{id:57,cat:"environment",diff:"easy",q:"ห่วงโซ่อาหารส่วนใหญ่เริ่มต้นจากอะไร",c:["สัตว์กินเนื้อ","ผู้ผลิต เช่น พืช","เห็ด
+
+รา","มนุษย์"],a:1,ex:"พืชผลิตพลังงานจากแสงอาทิตย์ แล้วพลังงานถ่ายทอดสู่ผู้บริโภคลำดับต่าง ๆ"},
+{id:58,cat:"environment",diff:"easy",q:"การปล่อยน้ำเสียจากโรงงานลงแม่น้ำโดยไม่บำบัดก่อให้เกิดอะไร",c:["มลพิษทางน้ำ","ฝน
+
+กรดเท่านั้น","แผ่นดินไหว","สุญญากาศ"],a:0,ex:"น้ำเสียทำให้คุณภาพน้ำแย่ลง สิ่งมีชีวิตในน้ำตาย และส่งผลต่อผู้ใช้น้ำ"},
+{id:59,cat:"environment",diff:"easy",q:"ข้อใดเป็นพลังงานหมุนเวียนทั้งหมด",c:["ถ่านหิน น้ำมัน ก๊าซ","แสงอาทิตย์ ลม 
+
+น้ำ","ก๊าซธรรมชาติ นิวเคลียร์","น้ำมันดิบ ถ่านหิน"],a:1,ex:"พลังงานหมุนเวียนมาจากแหล่งธรรมชาติที่ไม่มีวันหมด เช่น แสงอาทิตย์ ลม และน้ำ"},
+{id:60,cat:"environment",diff:"medium",q:"การเผาป่าและเผาพื้นที่เกษตรปล่อยสารใดสู่บรรยากาศเป็นหลัก",c:["ออกซิเจน
+
+บริสุทธิ์","คาร์บอนไดออกไซด์และฝุ่นละออง","ไนโตรเจนบริสุทธิ์","ไอน้ำสะอาด"],a:1,ex:"การเผาไหม้ปล่อย CO2 ควัน และฝุ่น PM ทำให้เกิดมลพิษทางอากาศ
+
+และโลกร้อน"},
+{id:61,cat:"atom",diff:"easy",q:"นิวเคลียสของอะตอมประกอบด้วยอนุภาคใด",c:["อิเล็กตรอนและโปรตอน","โปรตอนและ
+
+นิวตรอน","อิเล็กตรอนและนิวตรอน","โฟตอน"],a:1,ex:"นิวเคลียสอยู่ตรงกลางอะตอม มีโปรตอน (ประจุบวก) และนิวตรอน (ไม่มีประจุ)"},
+{id:62,cat:"atom",diff:"easy",q:"อนุภาคในอะตอมที่มีประจุไฟฟ้าลบคืออะไร",c:["โปรตอน","นิวตรอน","อิเล็กตรอน","โฟ
+
+ตอน"],a:2,ex:"อิเล็กตรอนมีประจุลบ เคลื่อนที่รอบนิวเคลียส"},
+{id:63,cat:"atom",diff:"easy",q:"โปรตอนมีประจุไฟฟ้าชนิดใด",c:["ลบ","บวก","เป็นกลาง","สลับไปมา"],a:1,ex:"โปรตอนมี
+
+ประจุบวก จำนวนโปรตอนกำหนดว่าอะตอมเป็นธาตุชนิดใด"},
+{id:64,cat:"atom",diff:"medium",q:"เลขอะตอม (Atomic number) บอกจำนวนของอะไร",c:["
+
+นิวตรอน","โปรตอน","อิเล็กตรอนวงนอกสุด","โมเลกุล"],a:1,ex:"เลขอะตอม = จำนวนโปรตอนในนิวเคลียส ใช้เรียงลำดับธาตุในตารางธาตุ"},
+{id:65,cat:"atom",diff:"medium",q:"ไอโซโทปของธาตุเดียวกันต่างกันที่จำนวนของอะไร",c:["โปรตอน","อิเล็กตรอน","นิวตรอน","โฟ
+
+ตอน"],a:2,ex:"ไอโซโทปมีโปรตอนเท่ากันแต่นิวตรอนต่างกัน มวลอะตอมจึงต่างกัน"},
+{id:66,cat:"atom",diff:"easy",q:"อิเล็กตรอนเคลื่อนที่อยู่บริเวณใดของอะตอม",c:["ในนิวเคลียส","รอบนิวเคลียสในระดับพลังงาน","นอก
+
+อะตอมเสมอ","ไม่เคลื่อนที่"],a:1,ex:"อิเล็กตรอนอยู่ในระดับพลังงานรอบนิวเคลียสตามแบบจำลองอะตอม"},
+{id:67,cat:"atom",diff:"easy",q:"ธาตุที่เบาที่สุดในธรรมชาติคือธาตุใด",c:["
+
+ฮีเลียม","ไฮโดรเจน","ออกซิเจน","คาร์บอน"],a:1,ex:"ไฮโดรเจนมีเพียง 1 โปรตอน เป็นธาตุที่เบาและพบมากที่สุดในจักรวาล"},
+{id:68,cat:"atom",diff:"medium",q:"ผู้ที่วางรากฐานตารางธาตุแบบแรกคือใคร",c:["ไอแซก นิวตัน","ดมิทรี เมนเดเลเยฟ","อัลเบิร์ต 
+
+ไอน์สไตน์","มารี กูรี"],a:1,ex:"เมนเดเลเยฟจัดเรียงธาตุตามมวลอะตอมและสมบัติ ทำนายธาตุที่ยังไม่ค้นพบได้"},
+{id:69,cat:"atom",diff:"medium",q:"อะตอมที่รับหรือจ่ายอิเล็กตรอนจนมีประจุเรียกว่าอะไร",c:["โมเลกุล","ไอออน","ไอโซโทป","นิวคลี
+
+ออน"],a:1,ex:"ไอออนบวกเกิดจากการจ่ายอิเล็กตรอน ไอออนลบเกิดจากการรับอิเล็กตรอน"},
+{id:70,cat:"atom",diff:"hard",q:"ดวงอาทิตย์ผลิตพลังงานด้วยปฏิกิริยานิวเคลียร์ชนิดใด",c:["ฟิชชัน","ฟิวชัน","การสลายกัมมันต์","การ
+
+เผาไหม้"],a:1,ex:"นิวเคลียร์ฟิวชันหลอมไฮโดรเจนเป็นฮีเลียม ปล่อยพลังงานมหาศาลตามสมการ E=mc²"},
+{id:71,cat:"cell",diff:"easy",q:"ส่วนของเซลล์ที่เปรียบเสมือนโรงไฟฟ้าผลิตพลังงานคืออะไร",c:["นิวเคลียส","ไมโทคอนเดรีย","ไรโบ
+
+โซม","วาแกวอล"],a:1,ex:"ไมโทคอนเดรียผลิต ATP ซึ่งเป็นพลังงานที่เซลล์นำไปใช้ทำกิจกรรมต่าง ๆ"},
+{id:72,cat:"cell",diff:"easy",q:"เซลล์พืชมีสิ่งใดที่เซลล์สัตว์ไม่มี",c:["เยื่อเซลล์","ผนังเซลล์และคลอโรพลาสต์","นิวเคลียส","ไมโทคอน
+
+เดรีย"],a:1,ex:"เซลล์พืชมีผนังเซลล์ที่แข็งแรงและคลอโรพลาสต์สำหรับสังเคราะห์แสง"},
+{id:73,cat:"cell",diff:"easy",q:"คลอโรฟิลล์ทำให้ใบพืชมีสีใด",c:["แดง","เหลือง","เขียว","ม่วง"],a:2,ex:"คลอโรฟิลล์ดูดแสงสี
+
+แดงและน้ำเงิน แต่สะท้อนสีเขียว ใบจึงดูเขียว"},
+{id:74,cat:"cell",diff:"easy",q:"นิวเคลียสของเซลล์ทำหน้าที่สำคัญคืออะไร",c:["ผลิตพลังงาน","เก็บ DNA และควบคุมการทำงาน
+
+ของเซลล์","ย่อยอาหาร","สร้างแสง"],a:1,ex:"นิวเคลียสเป็นศูนย์ควบคุมเซลล์ เก็บสารพันธุกรรม DNA"},
+{id:75,cat:"cell",diff:"medium",q:"เยื่อเซลล์ (Cell membrane) ทำหน้าที่ใด",c:["สร้างโปรตีน","ควบคุมการผ่านเข้า-ออก
+
+ของสาร","เก็บ DNA","ผลิตแสง"],a:1,ex:"เยื่อเซลล์เลือกให้สารบางชนิดผ่านเข้าออกเซลล์ได้ รักษาสมดุลภายในเซลล์"},
+{id:76,cat:"cell",diff:"medium",q:"การแบ่งเซลล์แบบไมโอซิส (Meiosis) สร้างเซลล์ชนิดใด",c:["เซลล์ผิวหนัง","เซลล์สืบ
+
+พันธุ์","เซลล์กล้ามเนื้อ","เซลล์ประสาท"],a:1,ex:"ไมโอซิสสร้างเซลล์สืบพันธุ์ที่มีโครโมโซมครึ่งหนึ่งของเซลล์ตั้งต้น"},
+{id:77,cat:"cell",diff:"medium",q:"เซลล์ประสาทส่งสัญญาณภายในร่างกายด้วยวิธีใด",c:["คลื่นเสียง","กระแสประสาทและสารสื่อ
+
+ประสาท","แสงเลเซอร์","แรงแม่เหล็ก"],a:1,ex:"เซลล์ประสาทส่งสัญญาณไฟฟ้าเคมีผ่านแอกซอนและปล่อยสารสื่อประสาทที่ไซแนปส์"},
+{id:78,cat:"cell",diff:"easy",q:"เม็ดเลือดแดงมีหน้าที่หลักคืออะไร",c:["ต่อสู้เชื้อโรค","ขนส่งออกซิเจน","ทำให้เลือดแข็งตัว","ย่อย
+
+อาหาร"],a:1,ex:"เม็ดเลือดแดงมีฮีโมโกลบินจับออกซิเจนจากปอดไปส่งทั่วร่างกาย"},
+{id:79,cat:"cell",diff:"medium",q:"ไรโบโซมในเซลล์ทำหน้าที่สร้างสารชนิดใด",c:["
+
+ไขมัน","โปรตีน","น้ำตาล","DNA"],a:1,ex:"ไรโบโซมอ่านรหัสจาก mRNA แล้วต่อกรดอะมิโนเป็นโปรตีน"},
+{id:80,cat:"cell",diff:"medium",q:"ออร์แกเนลล์ (Organelle) หมายถึงอะไร",c:["อวัยวะของสัตว์","โครงสร้างย่อยภายใน
+
+เซลล์ที่มีหน้าที่เฉพาะ","เซลล์ขนาดเล็ก","สารพันธุกรรม"],a:1,ex:"ออร์แกเนลล์ เช่น ไมโทคอนเดรีย ไรโบโซม นิวเคลียส แต่ละตัวมีหน้าที่เฉพาะในเซลล์"},
+{id:81,cat:"electricity",diff:"easy",q:"กระแสไฟฟ้าวัดเป็นหน่วยใด",c:["โวลต์","แอมแปร์","โอห์ม","วัตต์"],a:1,ex:"
+
+กระแสไฟฟ้า (I) คืออัตราการไหลของประจุ วัดเป็นแอมแปร์ (A)"},
+{id:82,cat:"electricity",diff:"easy",q:"ความต่างศักย์ไฟฟ้าวัดเป็นหน่วยใด",c:["โวลต์","แอมแปร์","จูล
+
+","โอห์ม"],a:0,ex:"ความต่างศักย์ (V) วัดเป็นโวลต์ เปรียบเหมือนแรงดันที่ผลักให้ประจุไหล"},
+{id:83,cat:"electricity",diff:"easy",q:"ความต้านทานไฟฟ้าวัดเป็นหน่วยใด",c:["วัตต์","โอห์ม","แอมแปร์","ฟา
+
+รัด"],a:1,ex:"ความต้านทาน (R) วัดเป็นโอห์ม (Ω) บ่งบอกการต้านการไหลของกระแส"},
+{id:84,cat:"electricity",diff:"medium",q:"ตามกฎของโอห์ม ความต่างศักย์ V เท่ากับข้อใด",c:["I + R","I × 
+
+R","I / R","R / I"],a:1,ex:"V = I × R ความต่างศักย์เท่ากับกระแสคูณความต้านทาน"},
+{id:85,cat:"electricity",diff:"medium",q:"วงจรไฟฟ้าแบบอนุกรมมีลักษณะอย่างไร",c:["กระแสไหลได้หลายเส้นทาง","กระแสมี
+
+เส้นทางเดียวผ่านอุปกรณ์ทุกตัว","ไม่มีกระแสไหล","ใช้แบตเตอรี่ไม่ได้"],a:1,ex:"วงจรอนุกรมต่อเรียงกันเส้นทางเดียว ถ้าจุดใดขาด กระแสจะหยุดทั้งวงจร"},
+{id:86,cat:"electricity",diff:"medium",q:"ในวงจรขนาน ถ้าหลอดไฟดวงหนึ่งขาด หลอดอื่นจะเป็นอย่างไร",c:["ดับหมด","ยังติด
+
+สว่างตามปกติ","สว่างขึ้นเรื่อย ๆ","ระเบิด"],a:1,ex:"วงจรขนานมีเส้นทางกระแสแยกอิสระ หลอดที่ขาดไม่กระทบเส้นทางอื่น"},
+{id:87,cat:"electricity",diff:"easy",q:"วัสดุใดเป็นตัวนำไฟฟ้าที่ดี",c:["ยาง","พลาสติก","ทองแดง","แก้ว"],a:2,ex:"ทอง
+
+แดงมีอิเล็กตรอนอิสระมาก นำไฟฟ้าได้ดี จึงใช้ทำสายไฟ"},
+{id:88,cat:"electricity",diff:"easy",q:"ข้อใดเป็นฉนวนไฟฟ้า",c:["เหล็ก","ทองแดง","ยางและพลาสติก","น้ำ
+
+เกลือ"],a:2,ex:"ฉนวนไม่ให้กระแสไหลผ่าน ใช้หุ้มสายไฟเพื่อความปลอดภัย"},
+{id:89,cat:"electricity",diff:"medium",q:"แบตเตอรี่เปลี่ยนพลังงานรูปใดเป็นพลังงานไฟฟ้า",c:["พลังงานแสง","พลังงาน
+
+เคมี","พลังงานความร้อน","พลังงานเสียง"],a:1,ex:"ปฏิกิริยาเคมีในแบตเตอรี่ผลักอิเล็กตรอนไหลเป็นกระแสไฟฟ้า"},
+{id:90,cat:"electricity",diff:"medium",q:"ฟิวส์ในวงจรไฟฟ้ามีหน้าที่อะไร",c:["เพิ่มกระแส","ตัดวงจรเมื่อกระแสสูงเกิน
+
+กำหนด","เก็บประจุ","เปลี่ยน AC เป็น DC"],a:1,ex:"ฟิวส์ขาดเมื่อกระแสเกิน ป้องกันอุปกรณ์เสียหายและไฟไหม้"},
+{id:91,cat:"force",diff:"easy",q:"แรงวัดเป็นหน่วยใด",c:["จูล","นิวตัน","วัตต์","ปาสกาล"],a:1,ex:"แรงวัดเป็นนิวตัน (N) 
+
+ตามชื่อของไอแซก นิวตัน"},
+{id:92,cat:"force",diff:"easy",q:"แรงโน้มถ่วงของโลกดึงวัตถุไปในทิศทางใด",c:["ขึ้นสู่ท้องฟ้า","เข้าสู่ศูนย์กลางโลก","ไปทาง
+
+เหนือ","ไปทางตะวันออก"],a:1,ex:"แรงโน้มถ่วงดึงมวลทุกก้อนเข้าหากัน บนโลกวัตถุจึงตกลงสู่พื้น"},
+{id:93,cat:"force",diff:"easy",q:"แรงเสียดทานมีผลต่อวัตถุที่เคลื่อนที่อย่างไร",c:["ทำให้เร็วขึ้น","ต้านการเคลื่อนที่ ทำให้ช้าลง","ไม่มี
+
+ผล","ทำให้ลอยขึ้น"],a:1,ex:"แรงเสียดทานเกิดระหว่างผิวสัมผัส ต้านทิศการเคลื่อนที่เสมอ"},
+{id:94,cat:"force",diff:"medium",q:"กฎการเคลื่อนที่ข้อที่ 3 ของนิวตันกล่าวว่าอย่างไร",c:["วัตถุนิ่งจะนิ่งตลอด","F = ma","ทุก
+
+แรงกิริยาย่อมมีแรงปฏิกิริยาขนาดเท่ากันทิศตรงข้าม","แรงเสียดทานเป็นศูนย์"],a:2,ex:"เมื่อวัตถุ A ออกแรงกระทำ B วัตถุ B จะออกแรงตอบโต้ขนาดเท่ากัน
+
+ในทิศตรงข้าม"},
+{id:95,cat:"force",diff:"medium",q:"เรือเหล็กลอยน้ำได้เพราะเหตุใด",c:["เหล็กเบากว่าน้ำ","แรงลอยตัวจากน้ำที่ถูกแทนที่มากกว่า
+
+น้ำหนักเรือ","แม่เหล็กดูดเรือ","ลมพัดเรือ"],a:1,ex:"ตามหลักของอาร์คิมิดีส แรงลอยตัวเท่ากับน้ำหนักของของเหลวที่ถูกแทนที่"},
+{id:96,cat:"force",diff:"easy",q:"แม่เหล็กสามารถดูดวัตถุที่ทำจากวัสดุใดได้ดีที่สุด",c:["
+
+พลาสติก","ไม้","เหล็ก","ยาง"],a:2,ex:"แม่เหล็กดูดสารแม่เหล็ก เช่น เหล็ก นิกเกิล และโคบอลต์"},
+{id:97,cat:"force",diff:"easy",q:"ขั้วแม่เหล็กชนิดเดียวกันเมื่ออยู่ใกล้กันจะเกิดอะไรขึ้น",c:["ดูดกัน","ผลักกัน","หลอมรวมกัน","ไม่
+
+เกิดอะไร"],a:1,ex:"ขั้วเดียวกันผลักกัน ขั้วต่างกันดูดกัน"},
+{id:98,cat:"force",diff:"medium",q:"น้ำหนักของวัตถุคำนวณจากสูตรใด",c:["มวล + ความเร็ว","มวล × ความเร่งโน้มถ่วง","มวล / 
+
+ปริมาตร","แรง × เวลา"],a:1,ex:"W = mg น้ำหนักคือแรงโน้มถ่วงที่กระทำต่อมวลของวัตถุ"},
+{id:99,cat:"force",diff:"medium",q:"แมลงบางชนิดเดินบนผิวน้ำได้เพราะปรากฏการณ์ใด",c:["แรงโน้มถ่วง","แรงตึงผิวของน้ำ","แรง
+
+แม่เหล็ก","แรงไฟฟ้าสถิต"],a:1,ex:"โมเลกุลน้ำยึดเหนี่ยวกันเกิดแรงตึงผิว รองรับน้ำหนักเบา ๆ ได้"},
+{id:100,cat:"force",diff:"easy",q:"การเดินบนพื้นน้ำแข็งลื่นกว่าพื้นปูนเพราะอะไร",c:["แรงเสียดทานน้อยกว่า","แรงโน้มถ่วง
+
+มากกว่า","อากาศหนาแน่นกว่า","แม่เหล็กอ่อนกว่า"],a:0,ex:"ผิวน้ำแข็งเรียบลื่น แรงเสียดทานต่ำ รองเท้าจึงเกาะพื้นได้น้อย"},
+{id:101,cat:"motion",diff:"easy",q:"ความเร็วคำนวณจากสูตรใด",c:["ระยะทาง × เวลา","ระยะทาง / เวลา","เวลา / ระยะทาง","มวล 
+
+× ความเร่ง"],a:1,ex:"ความเร็ว = ระยะทางหารด้วยเวลา เช่น 100 เมตรใน 20 วินาที = 5 เมตรต่อวินาที"},
+{id:102,cat:"motion",diff:"medium",q:"ความเร่งคืออัตราการเปลี่ยนแปลงของปริมาณใด",c:["ระยะทาง","ความ
+
+เร็ว","มวล","เวลา"],a:1,ex:"ความเร่ง = การเปลี่ยนความเร็วต่อหน่วยเวลา วัดเป็นเมตรต่อวินาทีกำลังสอง"},
+{id:103,cat:"motion",diff:"medium",q:"วัตถุที่ตกอิสระใกล้ผิวโลกมีความเร่งประมาณเท่าใด",c:["1 m/s²","9.8 
+
+m/s²","100 m/s²","0 m/s²"],a:1,ex:"ความเร่งโน้มถ่วงของโลกประมาณ 9.8 เมตรต่อวินาทีกำลังสอง"},
+{id:104,cat:"motion",diff:"medium",q:"กราฟระยะทาง-เวลาเป็นเส้นตรงชันขึ้น แสดงว่าวัตถุเคลื่อนที่อย่างไร",c:["หยุดนิ่ง","ด้วย
+
+ความเร็วคงที่","เร็วขึ้นเรื่อย ๆ","ช้าลงเรื่อย ๆ"],a:1,ex:"เส้นตรงบนกราฟระยะทาง-เวลาหมายถึงระยะทางเพิ่มสม่ำเสมอ คือความเร็วคงที่"},
+{id:105,cat:"motion",diff:"medium",q:"ความเฉื่อยคือสมบัติใดของวัตถุ",c:["ต้านการเปลี่ยนสภาพการเคลื่อนที่","ดูดแสง","นำ
+
+ไฟฟ้า","เปลี่ยนสี"],a:0,ex:"วัตถุนิ่งจะนิ่ง วัตถุเคลื่อนที่จะเคลื่อนที่ต่อ จนกว่าจะมีแรงมากระทำ"},
+{id:106,cat:"motion",diff:"easy",q:"เมื่อรถเบรกกะทันหัน ผู้โดยสารพุ่งไปข้างหน้าเพราะอะไร",c:["แรงดูดของรถ","ความเฉื่อย","แรง
+
+แม่เหล็ก","ลมพัด"],a:1,ex:"ร่างกายเคลื่อนที่มากับรถ เมื่อรถหยุดฉับพลัน ร่างกายยังรักษาสภาพเคลื่อนที่ต่อไปข้างหน้า"},
+{id:107,cat:"motion",diff:"hard",q:"วัตถุที่เคลื่อนที่เป็นวงกลมด้วยอัตราเร็วคงที่ต้องมีแรงชนิดใดกระทำ",c:["แรงเสียดทานเท่า
+
+นั้น","แรงสู่ศูนย์กลาง","แรงออกจากศูนย์กลาง","ไม่ต้องมีแรง"],a:1,ex:"แรงสู่ศูนย์กลางเปลี่ยนทิศการเคลื่อนที่ตลอดเวลา เช่น แรงตึงเชือกหรือแรงโน้มถ่วง"},
+{id:108,cat:"motion",diff:"medium",q:"ในอวกาศที่ไม่มีอากาศ วัตถุที่เคลื่อนที่แล้วจะเป็นอย่างไร",c:["ช้าลงจนหยุด","เคลื่อนที่ต่อไป
+
+ด้วยความเร็วคงที่","ตกลงสู่โลกทันที","ลอยนิ่ง"],a:1,ex:"ไม่มีแรงเสียดทานและแรงต้านอากาศ วัตถุจึงรักษาความเร็วตามกฎความเฉื่อย"},
+{id:109,cat:"motion",diff:"easy",q:"นักวิ่งวิ่งได้ 100 เมตรใน 20 วินาที มีความเร็วเฉลี่ยเท่าใด",c:["2 m/s","5 m/s","10 
+
+m/s","20 m/s"],a:1,ex:"ความเร็ว = 100 / 20 = 5 เมตรต่อวินาที"},
+{id:110,cat:"motion",diff:"easy",q:"หน่วย SI ของความเร็วคือข้อใด",c:["กิโลเมตรต่อชั่วโมง","เมตรต่อวินาที","ไมล์ต่อ
+
+ชั่วโมง","เซนติเมตรต่อนาที"],a:1,ex:"ระบบ SI ใช้เมตรต่อวินาที (m/s) เป็นหน่วยมาตรฐานของความเร็ว"},
+{id:111,cat:"heat",diff:"easy",q:"ความร้อนถ่ายเทตามธรรมชาติจากวัตถุร้อนไปยังวัตถุใด",c:["ร้อนกว่า","เย็นกว่า","อุณหภูมิเท่า
+
+กัน","ไม่ถ่ายเทเลย"],a:1,ex:"ความร้อนไหลจากอุณหภูมิสูงไปต่ำจนกว่าจะสมดุลกัน"},
+{id:112,cat:"heat",diff:"easy",q:"การนำความร้อนเกิดได้ดีที่สุดในวัสดุชนิดใด",c:["ไม้","พลาสติก","โลหะ","โฟม"],a:2,ex:"
+
+โลหะมีอิเล็กตรอนอิสระถ่ายเทพลังงานความร้อนได้ดี จึงใช้ทำหม้อ"},
+{id:113,cat:"heat",diff:"medium",q:"การพาความร้อน (Convection) เกิดในสสารสถานะใด",c:["ของแข็งเท่านั้น","ของเหลว
+
+และแก๊ส","สุญญากาศ","คริสตัล"],a:1,ex:"ของไหลร้อนขยายตัว เบา ลอยขึ้น ส่วนที่เย็นจมลง เกิดวงจรการพาความร้อน"},
+{id:114,cat:"heat",diff:"medium",q:"การแผ่รังสีความร้อนแตกต่างจากวิธีอื่นอย่างไร",c:["ต้องใช้โลหะ","ไม่ต้องการตัวกลาง","เกิดได้
+
+เฉพาะในน้ำ","ต้องมีลม"],a:1,ex:"รังสีความร้อนเดินทางผ่านสุญญากาศได้ เช่น ความร้อนจากดวงอาทิตย์ถึงโลก"},
+{id:115,cat:"heat",diff:"easy",q:"น้ำเดือดที่อุณหภูมิกี่องศาเซลเซียสที่ระดับน้ำทะเลปานกลาง",c:
+
+["50°C","90°C","100°C","120°C"],a:2,ex:"ที่ความดัน 1 บรรยากาศ น้ำเดือดที่ 100 องศาเซลเซียส"},
+{id:116,cat:"heat",diff:"easy",q:"น้ำแข็งหลอมเหลวที่อุณหภูมิเท่าใด",c:["0°C","10°C","-
+
+10°C","32°C"],a:0,ex:"จุดหลอมเหลวของน้ำแข็งคือ 0 องศาเซลเซียสที่ความดันปกติ"},
+{id:117,cat:"heat",diff:"medium",q:"ขวดสุญญากาศ (กระติกน้ำร้อน) เก็บความร้อนได้ดีเพราะอะไร",c:["ผนังบาง","ชั้นสุญญากาศ
+
+ลดการนำและพาความร้อน","ทำจากพลาสติก","มีสีดำ"],a:1,ex:"สุญญากาศระหว่างผนังสองชั้นไม่มีตัวกลางให้ความร้อนนำหรือพาออกไป"},
+{id:118,cat:"heat",diff:"easy",q:"อุณหภูมิวัดด้วยเครื่องมือใด",c:["
+
+บารอมิเตอร์","เทอร์โมมิเตอร์","ไฮโดรมิเตอร์","แอมมิเตอร์"],a:1,ex:"เทอร์โมมิเตอร์วัดอุณหภูมิ ส่วนบารอมิเตอร์วัดความดันอากาศ"},
+{id:119,cat:"heat",diff:"easy",q:"ของแข็งส่วนใหญ่เมื่อได้รับความร้อนจะเกิดอะไรขึ้น",c:["หดตัว","ขยายตัว","กลายเป็นแก๊ส
+
+ทันที","เปลี่ยนสี"],a:1,ex:"อนุภาคสั่นแรงขึ้นและอยู่ห่างกันมากขึ้น วัตถุจึงขยายตัว"},
+{id:120,cat:"heat",diff:"hard",q:"อุณหภูมิ 0 เคลวิน (ศูนย์องศาสัมบูรณ์) เท่ากับกี่องศาเซลเซียส",c:["0°C","-100°C","-
+
+273.15°C","-459°C"],a:2,ex:"0 K = -273.15°C เป็นจุดที่อนุภาคมีพลังงานความร้อนต่ำสุด"},
+{id:121,cat:"solar",diff:"medium",q:"ดาวเคราะห์กลุ่มหิน (Terrestrial) ได้แก่ข้อใด",c:["พฤหัสบดี เสาร์ ยูเรนัส","พุธ 
+
+ศุกร์ โลก อังคาร","เนปจูน พลูโต","ดาวหางทั้งหมด"],a:1,ex:"ดาวเคราะห์ชั้นใน 4 ดวงมีพื้นผิวเป็นหิน ส่วนดวงชั้นนอกเป็นดาวแก๊สยักษ์"},
+{id:122,cat:"solar",diff:"medium",q:"ดาวอังคารปรากฏเป็นสีแดงเพราะอะไร",c:["ลาวาบนพื้นผิว","ธาตุเหล็กออกไซด์ (สนิม) ใน
+
+ดิน","แสงจากดวงอาทิตย์สีแดง","แก๊สมีเทน"],a:1,ex:"พื้นผิวดาวอังคารมีเหล็กออกไซด์จำนวนมาก ทำให้ดูเป็นสีแดงสนิม"},
+{id:123,cat:"solar",diff:"easy",q:"วงแหวนของดาวเสาร์ประกอบด้วยอะไรเป็นหลัก",c:["แก๊สร้อน","ก้อนน้ำแข็งและหิน","แสง
+
+เลเซอร์","ฝุ่นทองคำ"],a:1,ex:"วงแหวนดาวเสาร์เป็นก้อนน้ำแข็ง หิน และฝุ่นนับล้านก้อนที่โคจรรอบดาว"},
+{id:124,cat:"solar",diff:"medium",q:"หางของดาวหางชี้ไปในทิศทางใดเสมอ",c:["เข้าหาดวงอาทิตย์","ออกจากดวงอาทิตย์","ขึ้นสู่
+
+เหนือ","ตามแรงโน้มถ่วงโลก"],a:1,ex:"ลมสุริยะและแรงดันแสงพัดไอและฝุ่นออกจากดวงอาทิตย์เสมอ"},
+{id:125,cat:"solar",diff:"easy",q:"สุริยุปราคาเกิดเมื่อใด",c:["โลกบังดวงจันทร์","ดวงจันทร์มาบังดวงอาทิตย์","ดาวศุกร์ผ่านหน้าดวง
+
+อาทิตย์","เมฆบังตลอดวัน"],a:1,ex:"เมื่อดวงจันทร์โคจรมาอยู่ระหว่างโลกกับดวงอาทิตย์พอดี จะบังแสงอาทิตย์"},
+{id:126,cat:"solar",diff:"easy",q:"จันทรุปราคาเกิดเมื่อใด",c:["ดวงจันทร์บังดวงอาทิตย์","โลกอยู่ระหว่างดวงอาทิตย์กับดวง
+
+จันทร์","ดาวอังคารบังดวงจันทร์","ดวงจันทร์หมดแสงเอง"],a:1,ex:"เงาของโลกทอดไปทับดวงจันทร์ เกิดจันทรุปราคาในคืนจันทร์เต็มดวง"},
+{id:127,cat:"solar",diff:"easy",q:"ข้อใดเป็นดาวเคราะห์แคระ",c:["ดาวเสาร์","พลูโต","ดาวอังคาร","ดาวศุกร์"],a:1,ex:"พลูโต
+
+ถูกจัดเป็นดาวเคราะห์แคระตั้งแต่ปี 2006 โดยสหพันธ์ดาราศาสตร์สากล"},
+{id:128,cat:"solar",diff:"medium",q:"แถบดาวเคราะห์น้อย (Asteroid Belt) อยู่ระหว่างดาวเคราะห์คู่ใด",c:["โลกกับ
+
+อังคาร","อังคารกับพฤหัสบดี","เสาร์กับยูเรนัส","พุธกับศุกร์"],a:1,ex:"แถบดาวเคราะห์น้อยอยู่ระหว่างวงโคจรของดาวอังคารและดาวพฤหัสบดี"},
+{id:129,cat:"solar",diff:"medium",q:"ดาวศุกร์มีอุณหภูมิพื้นผิวสูงที่สุดในระบบสุริยะเพราะอะไร",c:["อยู่ใกล้ดวงอาทิตย์ที่สุด","ภาวะ
+
+เรือนกระจกรุนแรงจาก CO2 หนาแน่น","มีภูเขาไฟทุกจุด","หมุนรอบตัวเร็ว"],a:1,ex:"บรรยากาศ CO2 หนาทึบของดาวศุกร์กักความร้อน ทำให้ผิวร้อนกว่า 
+
+460°C"},
+{id:130,cat:"solar",diff:"medium",q:"ปีแสง (Light-year) เป็นหน่วยวัดของปริมาณใด",c:["เวลา","ระยะทาง","ความ
+
+เร็ว","มวล"],a:1,ex:"1 ปีแสงคือระยะทางที่แสงเดินทางใน 1 ปี ประมาณ 9.46 ล้านล้านกิโลเมตร"},
+{id:131,cat:"matter",diff:"easy",q:"สถานะพื้นฐานของสารมีกี่สถานะและได้แก่อะไร",c:["2 สถานะ","3 สถานะ: ของแข็ง ของเหลว 
+
+แก๊ส","4 สถานะ","5 สถานะ"],a:1,ex:"สถานะพื้นฐานคือของแข็ง ของเหลว และแก๊ส (นอกจากนี้ยังมีพลาสมา)"},
+{id:132,cat:"matter",diff:"easy",q:"การที่ของเหลวกลายเป็นไอที่ผิวหน้าโดยไม่ต้องเดือดเรียกว่าอะไร",c:["การกลั่นตัว","การ
+
+ระเหย","การแข็งตัว","การหลอมเหลว"],a:1,ex:"การระเหยเกิดที่ผิวของเหลวทุกอุณหภูมิ เช่น ผ้าเปียกที่แห้งไป"},
+{id:133,cat:"matter",diff:"easy",q:"ไอน้ำเปลี่ยนเป็นหยดน้ำบนฝาแก้วเย็นเรียกว่าอะไร",c:["การระเหย","การกลั่นตัว","การ
+
+เดือด","การระเหิด"],a:1,ex:"การกลั่นตัวคือแก๊สเย็นลงเปลี่ยนเป็นของเหลว เช่น หยดน้ำบนแก้วเย็น"},
+{id:134,cat:"matter",diff:"medium",q:"น้ำแข็งแห้ง (CO2 แข็ง) กลายเป็นแก๊สโดยไม่ผ่านของเหลวเรียกว่าอะไร",c:["การหลอม
+
+เหลว","การระเหิด (Sublimation)","การกลั่นตัว","การเดือด"],a:1,ex:"การระเหิดคือของแข็งเปลี่ยนเป็นแก๊สโดยตรง เช่น น้ำแข็งแห้งและกานด์"},
+{id:135,cat:"matter",diff:"easy",q:"ของแข็งมีคุณสมบัติข้อใด",c:["รูปร่างเปลี่ยนตามภาชนะ","รูปร่างและปริมาตรแน่นอน","ไหลได้
+
+เสมอ","บีบอัดง่าย"],a:1,ex:"อนุภาคของแข็งยึดกันแน่น จึงมีรูปร่างและปริมาตรคงที่"},
+{id:136,cat:"matter",diff:"easy",q:"แก๊สมีปริมาตรอย่างไร",c:["แน่นอนเสมอ","เปลี่ยนตามภาชนะที่บรรจุ","เป็นศูนย์","เท่ากับของ
+
+แข็ง"],a:1,ex:"แก๊สไม่มีรูปร่างและปริมาตรแน่นอน จะกระจายเต็มภาชนะที่บรรจุ"},
+{id:137,cat:"matter",diff:"medium",q:"ความหนาแน่นคำนวณจากสูตรใด",c:["มวล × ปริมาตร","มวล / ปริมาตร","ปริมาตร / 
+
+มวล","มวล + ปริมาตร"],a:1,ex:"ความหนาแน่น = มวลหารด้วยปริมาตร (D = m/V)"},
+{id:138,cat:"matter",diff:"medium",q:"น้ำแข็งลอยอยู่บนน้ำได้เพราะอะไร",c:["น้ำแข็งหนักกว่า","น้ำแข็งมีความหนาแน่นน้อยกว่า
+
+น้ำ","น้ำดูดน้ำแข็ง","ลมทะเลพัด"],a:1,ex:"น้ำแข็งมีโครงสร้างผลึกที่โปร่ง หนาแน่นน้อยกว่าน้ำเหลวจึงลอยได้"},
+{id:139,cat:"matter",diff:"medium",q:"ในสารละลายน้ำตาล ตัวทำละลาย (Solvent) คืออะไร",c:["น้ำตาล","น้ำ","ผลึก
+
+น้ำตาล","อากาศ"],a:1,ex:"ตัวทำละลายคือสารที่ละลายตัวถูกละลาย ในน้ำตาลละลายน้ำ ตัวทำละลายคือน้ำ"},
+{id:140,cat:"matter",diff:"medium",q:"การแยกสารละลายของเหลวที่มีจุดเดือดต่างกันใช้วิธีใด",c:["การกรอง","การกลั่น","การตก
+
+ตะกอน","แม่เหล็ก"],a:1,ex:"การกลั่นต้มสารละลายให้สารจุดเดือดต่ำระเหยก่อน แล้วกลั่นตัวเก็บแยก"},
+{id:141,cat:"technology",diff:"easy",q:"AI ย่อมาจากคำว่าอะไร",c:["Automatic 
+
+Internet","Artificial Intelligence","Advanced Interface","Analog Input"],a:1,ex:"AI 
+
+(Artificial Intelligence) คือปัญญาประดิษฐ์ ระบบที่เลียนแบบความฉลาดของมนุษย์"},
+{id:142,cat:"technology",diff:"easy",q:"หุ่นยนต์ทำงานตามสิ่งใดเป็นหลัก",c:["สัญชาตญาณ","โปรแกรมและอัลกอริทึมที่มนุษย์
+
+เขียน","เวทมนตร์","แรงโน้มถ่วง"],a:1,ex:"หุ่นยนต์ทำงานตามชุดคำสั่ง (โปรแกรม) ประมวลผลข้อมูลจากเซ็นเซอร์แล้วสั่งมอเตอร์"},
+{id:143,cat:"technology",diff:"easy",q:"เซ็นเซอร์ (Sensor) มีหน้าที่อะไร",c:["ผลิตไฟฟ้า","ตรวจจับสัญญาณจากสิ่งแวด
+
+ล้อม เช่น แสง เสียง อุณหภูมิ","เก็บข้อมูลถาวร","พิมพ์เอกสาร"],a:1,ex:"เซ็นเซอร์แปลงปริมาณทางกายภาพเป็นสัญญาณไฟฟ้าให้ระบบประมวลผล"},
+{id:144,cat:"technology",diff:"easy",q:"แผงโซลาร์เซลล์เปลี่ยนพลังงานใดเป็นไฟฟ้า",c:["พลังงานลม","พลังงานแสง
+
+อาทิตย์","พลังงานเสียง","พลังงานความร้อนใต้พิภพ"],a:1,ex:"โซลาร์เซลล์ใช้ปรากฏการณ์โฟโตโวลตาอิกเปลี่ยนแสงเป็นกระแสไฟฟ้า"},
+{id:145,cat:"technology",diff:"easy",q:"ดาวเทียมสื่อสารโคจรอยู่รอบวัตถุใด",c:["ดวงจันทร์","โลก","ดาวอังคาร","ดวง
+
+อาทิตย์"],a:1,ex:"ดาวเทียมสื่อสารโคจรรอบโลก ส่งสัญญาณโทรทัศน์ อินเทอร์เน็ต และ GPS"},
+{id:146,cat:"technology",diff:"medium",q:"แสงเลเซอร์มีคุณสมบัติพิเศษข้อใด",c:["กระจายทุกทิศเหมือนหลอดไฟ","มีความยาว
+
+คลื่นเดียว เฟสตรงกัน ลำแสงตรงเข้มข้น","มองไม่เห็นเสมอ","ไม่มีพลังงาน"],a:1,ex:"เลเซอร์เป็นแสงที่สอดคล้องกัน (Coherent) จึงรวมพลังงานสูงและพุ่ง
+
+ตรงไกล"},
+{id:147,cat:"technology",diff:"medium",q:"นาโนเทคโนโลยีเกี่ยวข้องกับการทำงานในระดับขนาดใด",c:["มิลลิเมตร","นาโนเมตร 
+
+(หนึ่งในพันล้านเมตร)","กิโลเมตร","ไมครอนเท่านั้น"],a:1,ex:"1 นาโนเมตร = 10⁻⁹ เมตร ใกล้เคียงขนาดอะตอมและโมเลกุล"},
+{id:148,cat:"technology",diff:"easy",q:"รถยนต์ไฟฟ้า (EV) ใช้พลังงานจากแหล่งใดเป็นหลัก",c:["น้ำมันเบนซิน","แบตเตอรี่
+
+ไฟฟ้า","ถ่านหิน","ก๊าซ LPG"],a:1,ex:"รถ EV เก็บพลังงานในแบตเตอรี่ลิเทียมไอออนแล้วจ่ายมอเตอร์ไฟฟ้า"},
+{id:149,cat:"technology",diff:"medium",q:"เครื่องพิมพ์ 3 มิติสร้างวัตถุด้วยวิธีใด",c:["แกะสลักจากก้อนเดียว","เติมวัสดุทีละชั้น
+
+จากล่างขึ้นบน","ถ่ายภาพหลายมุม","แช่แข็งเร็ว"],a:1,ex:"การพิมพ์ 3 มิติ (Additive Manufacturing) สร้างวัตถุทีละชั้นตามแบบดิจิทัล"},
+{id:150,cat:"technology",diff:"medium",q:"IoT (Internet of Things) หมายถึงอะไร",c:["อินเทอร์เน็ตความ
+
+เร็วสูง","อุปกรณ์ต่าง ๆ เชื่อมต่ออินเทอร์เน็ตและแลกเปลี่ยนข้อมูลกัน","เครือข่ายคอมพิวเตอร์ในออฟฟิศ","โซเชียลมีเดีย"],a:1,ex:"IoT คือเครือข่ายของ
+
+อุปกรณ์ เช่น ตู้เย็น นาฬิกา รถยนต์ ที่เชื่อมอินเทอร์เน็ตและสื่อสารกันเอง"}
+];
+const CATEGORIES={physics:"ฟิสิกส์",chemistry:"เคมี",biology:"ชีววิทยา",space:"โลกและอวกาศ",energy:"
+
+พลังงาน",environment:"สิ่งแวดล้อม",atom:"อะตอม",cell:"เซลล์",electricity:"ไฟฟ้า",force:"แรง",motion:"การเคลื่อน
+
+ที่",heat:"ความร้อน",solar:"ระบบสุริยะ",matter:"สาร",technology:"เทคโนโลยี"};
+/* ================= CREATURES (16) ================= */
+const CREATURES=[
+{id:"cellum",name:"CELLUM",type:"BIOLOGICAL",color:"#39ff88",shape:"blob",eyes:3,rarity:"
+
+COMMON",ability:"Cell Split — แบ่งตัวหลบการโจมตี",info:"ดูดซับพลังงานชีวภาพจากเซลล์รอบตัว สามารถแบ่งเซลล์ซ่อมแซมตัวเองได้
+
+เหมือนการแบ่งเซลล์จริง",anim:"anim-float"},
+{id:"protomo",name:"PROTOMO",type:"ATOMIC",color:"#ffd23f",shape:"atom",eyes:1,rarity:"CO
+
+MMON",ability:"Proton Shield — เกราะประจุบวก",info:"ตัวมันเสถียรเหมือนนิวเคลียสอะตอม มีอนุภาคพลังงานวิ่งรอบตัวตลอด
+
+เวลา",anim:"anim-spin-slow"},
+{id:"florax",name:"FLORAX",type:"BIOLOGICAL",color:"#6bff6b",shape:"plant",eyes:2,rarity:
+
+"COMMON",ability:"Photosynth — ฟื้นพลังด้วยแสง",info:"สังเคราะห์แสงได้เหมือนพืช เปลี่ยนแสงเป็นพลังงานชีวิตโดย
+
+ตรง",anim:"anim-pulse"},
+{id:"sporeling",name:"SPORELING",type:"BIOLOGICAL",color:"#c58cff",shape:"mush",eyes:2,ra
+
+rity:"UNCOMMON",ability:"Spore Cloud — ปล่อยสปอร์รบกวน",info:"กระจายสปอร์ขนาดจิ๋วที่ดูดพลังงาน เหมือนเชื้อราที่แพร่พันธุ์
+
+ด้วยสปอร์",anim:"anim-float"},
+{id:"acidra",name:"ACIDRA",type:"CHEMICAL",color:"#b6ff3f",shape:"blob",eyes:2,rarity:"UN
+
+COMMON",ability:"Acid Melt — ละลายเกราะพลังงาน",info:"ของเหลวในร่างมีค่า pH ต่ำมากเหมือนกรดแก่ ละลายโลหะได้ในไม่กี่
+
+วินาที",anim:"anim-pulse"},
+{id:"cristalox",name:"CRISTALOX",type:"CHEMICAL",color:"#8affef",shape:"crystal",eyes:1,r
+
+arity:"RARE",ability:"Crystal Guard — ผลึกป้องกัน",info:"ร่างกายเป็นผลึกเกลือที่งอกเรื่อย ๆ เหมือนการตกผลึกของสารละลาย
+
+อิ่มตัว",anim:"anim-spin-slow"},
+{id:"voltix",name:"VOLTIX",type:"ELECTRIC",color:"#ffe93f",shape:"bolt",eyes:2,rarity:"CO
+
+MMON",ability:"Spark Dash — พุ่งเร็วเหมือนฟ้าแลบ",info:"สะสมประจุไฟฟ้าสถิตในร่าง ปล่อยกระแสออกมาเหมือนตัวเก็บ
+
+ประจุ",anim:"anim-jitter"},
+{id:"ampetra",name:"AMPETRA",type:"ELECTRIC",color:"#ffb03f",shape:"atom",eyes:3,rarity:"
+
+UNCOMMON",ability:"Current Flow — กระแสไหลวนเพิ่มพลัง",info:"วงจรพลังงานในร่างไหลวนไม่หยุด เหมือนวงจรไฟฟ้าปิดที่
+
+สมบูรณ์",anim:"anim-jitter"},
+{id:"aquabit",name:"AQUABIT",type:"HYDRO",color:"#3fc6ff",shape:"fish",eyes:2,rarity:"COM
+
+MON",ability:"Bubble Veil — ม่านฟองลดความเสียหาย",info:"ควบคุมแรงตึงผิวของน้ำ สร้างฟองที่ทนต่อแรงกระแทกได้
+
+สูง",anim:"anim-float"},
+{id:"coralux",name:"CORALUX",type:"HYDRO",color:"#ff8ac2",shape:"coral",eyes:3,rarity:"RA
+
+RE",ability:"Reef Armor — เกราะปะการัง",info:"สร้างโครงกระดูกคาร์บอเนตเหมือนปะการัง แข็งแกร่งและฟื้นตัวเร็ว",anim:"anim-
+
+pulse"},
+{id:"astrox",name:"ASTROX",type:"COSMIC",color:"#b28aff",shape:"star",eyes:1,rarity:"UNCO
+
+MMON",ability:"Meteor Rush — พุ่งชนเหมือนอุกกาบาต",info:"ร่างกายหนาแน่นสูงเหมือนหินอวกาศ ทนความร้อนจากการเสียดสีชั้น
+
+บรรยากาศ",anim:"anim-float"},
+{id:"lunara",name:"LUNARA",type:"COSMIC",color:"#d7e3ff",shape:"moon",eyes:2,rarity:"RARE
+
+",ability:"Tide Call — ควบคุมพลังน้ำขึ้นน้ำลง",info:"สนามโน้มถ่วงรอบตัวเปลี่ยนแปลงเป็นจังหวะ เหมือนอิทธิพลของดวงจันทร์ต่อน้ำ
+
+ทะเล",anim:"anim-pulse"},
+{id:"quarkle",name:"QUARKLE",type:"QUANTUM",color:"#ff6bd6",shape:"atom",eyes:2,rarity:"R
+
+ARE",ability:"Superposition — อยู่ได้สองที่พร้อมกัน",info:"อยู่ในสภาพซ้อนทับของควอนตัม ศัตรูมองเห็นมันได้หลายตำแหน่งพร้อม
+
+กัน",anim:"anim-jitter"},
+{id:"neutrina",name:"NEUTRINA",type:"QUANTUM",color:"#9fffe0",shape:"ghost",eyes:1,rarity
+
+:"EPIC",ability:"Phase Through — ทะลุผ่านทุกสิ่ง",info:"แทบไม่มีปฏิสัมพันธ์กับสสาร เหมือนนิวตริโนที่ทะลุโลกทั้งใบ
+
+ได้",anim:"anim-float"},
+{id:"flamora",name:"FLAMORA",type:"THERMAL",color:"#ff6b3f",shape:"flame",eyes:2,rarity:"
+
+UNCOMMON",ability:"Heat Burst — ระเบิดคลื่นความร้อน",info:"แผ่รังสีความร้อนออกจากตัวตลอดเวลา อุณหภูมิรอบตัวสูงกว่าปกติหลาย
+
+สิบองศา",anim:"anim-pulse"},
+{id:"darkmota",name:"DARKMOTA",type:"DARK 
+
+ENERGY",color:"#8a5cff",shape:"ghost",eyes:3,rarity:"EPIC",ability:"Void Drain — ดูดพลังงาน
+
+รอบตัว",info:"ดูดซับพลังงานจากช่องว่างรอบตัว เหมือนพลังงานมืดที่ผลักให้จักรวาลขยายตัว",anim:"anim-float"}
+];
+/* ================= BOSSES ================= */
+const BOSSES=[
+{id:"pyragon",name:"PYRAGON",type:"THERMAL",color:"#ff4d2e",shape:"flame",eyes:3,hp:220,l
+
+evel:8,mech:"heat",cats:["heat","energy"],info:"มังกรพลังงานความร้อนที่ดูดซับความร้อนจาก BIO FOREST จนร่าง
+
+กายกลายเป็นเตาหลอมเดินได้",attack:"Inferno Wave"},
+{id:"voltarion",name:"VOLTARION",type:"ELECTRIC",color:"#ffe93f",shape:"bolt",eyes:2,hp:2
+
+60,level:12,mech:"circuit",cats:["electricity"],info:"ยักษ์กระแสไฟฟ้าแห่ง ELECTRO CITY ร่างกายคือวงจร
+
+ไฟฟ้ายักษ์ที่ลัดวงจรได้ทุกเมื่อ",attack:"Thunder Crash"},
+{id:"abyssor",name:"ABYSSOR",type:"HYDRO",color:"#2e9bff",shape:"fish",eyes:3,hp:300,leve
+
+l:16,mech:"pressure",cats:["matter","physics"],info:"ราชันแห่งห้วงลึก OCEAN RESEARCH BASE ควบคุม
+
+ความดันน้ำได้เหมือนอยู่ใต้ทะเลลึกหมื่นเมตร",attack:"Abyss Crush"},
+{id:"graviton",name:"GRAVITON",type:"GRAVITY",color:"#b28aff",shape:"moon",eyes:1,hp:340,
+
+level:20,mech:"gravity",cats:["force","motion"],info:"สิ่งมีชีวิตที่กลืนสนามโน้มถ่วงของ SPACE STATION จน
+
+บิดโค้งการเคลื่อนที่ของทุกสิ่งรอบตัว",attack:"Meteor Fall"},
+{id:"genecell",name:"GENECELL",type:"BIOLOGICAL",color:"#5cff8a",shape:"blob",eyes:4,hp:3
+
+80,level:24,mech:"cores",cats:["cell","biology"],info:"เซลล์ยักษ์กลายพันธุ์ที่มีแกนกลางหลายส่วน ฟื้นตัวได้เรื่อย ๆ 
+
+ถ้าไม่ทำลาย Core ให้หมด",attack:"Mutation Spike"},
+{id:"quantara",name:"QUANTARA",type:"QUANTUM",color:"#ff6bd6",shape:"ghost",eyes:2,hp:420
+
+,level:28,mech:"phase",cats:["atom","physics"],info:"ผู้พิทักษ์ QUANTUM FACILITY ที่สลับสถานะควอนตัมได้ 
+
+สนามรบรอบตัวมันไม่เคยนิ่ง",attack:"Quantum Rift"},
+{id:"genesis",name:"GENESIS 
+
+CORE",type:"ORIGIN",color:"#ffffff",shape:"crystal",eyes:5,hp:600,level:35,mech:"genesis"
+
+,cats:[],info:"แกนกลางการทดลองดั้งเดิมของ NOVA LAB ที่ดูดซับพลังงานทุกสาขาวิทยาศาสตร์จนกลายเป็นหัวใจของโลกใบ
+
+ใหม่",attack:"Genesis Ray"}
+];
+/* ================= AREAS (8) ================= */
+const AREAS=[
+{id:0,name:"NOVA LAB",desc:"ห้องทดลองต้นกำเนิดของทุกเรื่อง — ฝึกฝนการจับสิ่งมีชีวิตที่นี่",grad:"linear-gradient
+
+(160deg,#0a1a3a,#123a6b)",pc:"#00f0ff",creatures:
+
+["cellum","protomo"],boss:null,music:"lab"},
+{id:1,name:"BIO FOREST",desc:"ป่าชีวภาพที่พืชพรรณเติบโตเร็วผิดปกติ",grad:"linear-gradient
+
+(160deg,#062b16,#0f5c2e)",pc:"#39ff88",creatures:
+
+["florax","sporeling"],boss:"pyragon",music:"forest"},
+{id:2,name:"CHEMICAL CAVE",desc:"ถ้ำสารเคมีที่ผนังเต็มไปด้วยผลึกเรืองแสง",grad:"linear-gradient
+
+(160deg,#241a3a,#4a2a7a)",pc:"#c58cff",creatures:
+
+["acidra","cristalox"],boss:"voltarion",music:"cave"},
+{id:3,name:"ELECTRO CITY",desc:"เมืองแห่งกระแสไฟฟ้า ฟ้าแลบไม่เคยหยุด",grad:"linear-gradient
+
+(160deg,#2b2406,#6b5a0f)",pc:"#ffe93f",creatures:
+
+["voltix","ampetra"],boss:"abyssor",music:"city"},
+{id:4,name:"OCEAN RESEARCH BASE",desc:"ฐานวิจัยใต้มหาสมุทร ความดันสูงทุกซอกมุม",grad:"linear-gradient
+
+(160deg,#062a3a,#0f4a6b)",pc:"#3fc6ff",creatures:
+
+["aquabit","coralux"],boss:"graviton",music:"ocean"},
+{id:5,name:"SPACE STATION",desc:"สถานีอวกาศที่แรงโน้มถ่วงเริ่มวิปลาส",grad:"linear-gradient
+
+(160deg,#120a2e,#2e1a5c)",pc:"#b28aff",creatures:
+
+["astrox","lunara"],boss:"genecell",music:"space"},
+{id:6,name:"QUANTUM FACILITY",desc:"ศูนย์วิจัยควอนตัม ความจริงสลับสับเปลี่ยน",grad:"linear-gradient
+
+(160deg,#2e0a24,#5c1a4a)",pc:"#ff6bd6",creatures:
+
+["quarkle","neutrina"],boss:"quantara",music:"quantum"},
+{id:7,name:"CORE LAB",desc:"หัวใจของ NOVA LAB — ที่ซ่อน GENESIS CORE",grad:"linear-gradient
+
+(160deg,#2e0a0a,#5c1a1a)",pc:"#ff5c5c",creatures:
+
+["flamora","darkmota"],boss:"genesis",music:"core"}
+];
+/* ================= SCIENCE DATABASE ================= */
+const SCI_DB=[
+{id:"atom",title:"ATOM — อะตอม",text:"อะตอมคือหน่วยย่อยที่เล็กที่สุดของธาตุ ประกอบด้วยโปรตอน นิวตรอน และอิเล็กตรอน จำนวน
+
+โปรตอนกำหนดชนิดของธาตุ",cats:["atom"]},
+{id:"cell",title:"CELL — เซลล์",text:"เซลล์คือหน่วยพื้นฐานของสิ่งมีชีวิต มีนิวเคลียสเก็บ DNA และไมโทคอนเดรียผลิตพลังงาน 
+
+ATP",cats:["cell","biology"]},
+{id:"energy",title:"ENERGY — พลังงาน",text:"พลังงานไม่สูญหาย แต่เปลี่ยนรูปได้ เช่น พลังงานศักย์เป็นพลังงานจลน์ หรือพลังงานแสงเป็น
+
+พลังงานไฟฟ้า",cats:["energy"]},
+{id:"electricity",title:"ELECTRICITY — ไฟฟ้า",text:"กระแสไฟฟ้าคือการไหลของประจุ วัดเป็นแอมแปร์ กฎของโอห์มกล่าวว่า V 
+
+= I × R",cats:["electricity"]},
+{id:"gravity",title:"GRAVITY — แรงโน้มถ่วง",text:"แรงโน้มถ่วงคือแรงดึงดูดระหว่างมวล โลกดึงวัตถุด้วยความเร่งประมาณ 9.8 
+
+m/s²",cats:["force","motion"]},
+{id:"heat",title:"HEAT — ความร้อน",text:"ความร้อนถ่ายเทจากร้อนไปเย็น 3 วิธี คือ การนำ การพา และการแผ่รังสี",cats:
+
+["heat"]},
+{id:"space",title:"SPACE — อวกาศ",text:"ระบบสุริยะมีดาวเคราะห์ 8 ดวง แสงจากดวงอาทิตย์ใช้เวลาเดินทางถึงโลกราว 8 นาที",cats:
+
+["space","solar"]},
+{id:"dna",title:"DNA — สารพันธุกรรม",text:"DNA เก็บรหัสพันธุกรรมของสิ่งมีชีวิต โครงสร้างเป็นเกลียวคู่ ประกอบด้วยเบส 4 ชนิด คือ A T 
+
+G C",cats:["biology","cell"]},
+{id:"ecosystem",title:"ECOSYSTEM — ระบบนิเวศ",text:"ระบบนิเวศคือความสัมพันธ์ของสิ่งมีชีวิตกับสิ่งแวดล้อม พลังงานไหลจากผู้
+
+ผลิตสู่ผู้บริโภคตามห่วงโซ่อาหาร",cats:["environment","biology"]}
+];
+/* ================= SVG SPRITE GENERATOR ================= */
+function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=
+
+((n>>8)&255)+p,b=(n&255)+p;r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min
+
+(255,g));b=Math.max(0,Math.min(255,b));return `rgb(${r},${g},${b})`}
+function creatureSVG(c,size=140){
+  const col=c.color,dark=shade(col,-50),light=shade(col,50);
+  let eyes="";
+  const eyePos=[[50,52],[34,54],[66,54],[50,36],[30,40],[70,40]];
+  for(let i=0;i<Math.min(c.eyes,eyePos.length);i++){const[x,y]=eyePos[i];eyes+=`<circle 
+
+cx="${x}" cy="${y}" r="5.5" fill="#fff"/><circle cx="${x}" cy="${y}" r="2.6" 
+
+fill="#111"/>`}
+  let body="";
+  switch(c.shape){
+    case"blob":body=`<path d="M20 70 Q14 34 50 30 Q88 26 84 66 Q82 92 50 92 Q24 92 20 
+
+70Z" fill="${col}" stroke="${dark}" stroke-width="3"/><ellipse cx="38" cy="46" rx="9" 
+
+ry="5" fill="${light}" opacity=".6"/>`;break;
+    case"atom":body=`<circle cx="50" cy="58" r="26" fill="${col}" stroke="${dark}" 
+
+stroke-width="3"/><ellipse cx="50" cy="58" rx="44" ry="15" fill="none" stroke="${light}" 
+
+stroke-width="2.5" opacity=".8"/><ellipse cx="50" cy="58" rx="44" ry="15" fill="none" 
+
+stroke="${light}" stroke-width="2.5" opacity=".8" transform="rotate(60 50 58)"/><ellipse 
+
+cx="50" cy="58" rx="44" ry="15" fill="none" stroke="${light}" stroke-width="2.5" 
+
+opacity=".8" transform="rotate(-60 50 58)"/>`;break;
+    case"plant":body=`<path d="M50 92 L50 55" stroke="${dark}" stroke-width="6" stroke-
+
+linecap="round"/><path d="M50 62 Q26 58 22 38 Q46 40 50 62Z" fill="${col}" 
+
+stroke="${dark}" stroke-width="2.5"/><path d="M50 62 Q74 58 78 38 Q54 40 50 62Z" 
+
+fill="${col}" stroke="${dark}" stroke-width="2.5"/><circle cx="50" cy="34" r="17" 
+
+fill="${light}" stroke="${dark}" stroke-width="3"/>`;break;
+    case"mush":body=`<path d="M14 52 Q50 10 86 52 Q68 60 50 60 Q32 60 14 52Z" 
+
+fill="${col}" stroke="${dark}" stroke-width="3"/><circle cx="34" cy="40" r="5" 
+
+fill="#fff" opacity=".8"/><circle cx="60" cy="34" r="6" fill="#fff" opacity=".8"/><rect 
+
+x="38" y="58" width="24" height="32" rx="10" fill="${light}" stroke="${dark}" stroke-
+
+width="3"/>`;break;
+    case"crystal":body=`<path d="M50 12 L72 44 L64 88 L36 88 L28 44Z" fill="${col}" 
+
+stroke="${dark}" stroke-width="3" opacity=".92"/><path d="M50 12 L58 44 L50 84 L42 44Z" 
+
+fill="${light}" opacity=".55"/><path d="M28 44 L72 44" stroke="${dark}" stroke-width="2" 
+
+opacity=".5"/>`;break;
+    case"bolt":body=`<path d="M56 8 L30 54 L48 54 L40 92 L72 44 L52 44Z" fill="${col}" 
+
+stroke="${dark}" stroke-width="3" stroke-linejoin="round"/>`;break;
+    case"fish":body=`<path d="M16 58 Q34 32 62 36 Q84 40 86 58 Q84 76 62 80 Q34 84 16 
+
+58Z" fill="${col}" stroke="${dark}" stroke-width="3"/><path d="M16 58 L4 44 L8 58 L4 72Z" 
+
+fill="${dark}"/><path d="M62 36 Q70 24 78 30" stroke="${dark}" stroke-width="3" 
+
+fill="none"/><circle cx="74" cy="30" r="4" fill="${light}" opacity=".7"/><circle cx="82" 
+
+cy="22" r="3" fill="${light}" opacity=".6"/>`;break;
+    case"coral":body=`<path d="M50 90 L50 50 M50 66 Q34 60 30 42 M50 66 Q66 60 70 42 M50 
+
+50 Q40 40 42 28 M50 50 Q60 40 58 28" stroke="${col}" stroke-width="9" stroke-
+
+linecap="round" fill="none"/><circle cx="30" cy="40" r="8" fill="${light}"/><circle 
+
+cx="70" cy="40" r="8" fill="${light}"/><circle cx="42" cy="26" r="7" 
+
+fill="${light}"/><circle cx="58" cy="26" r="7" fill="${light}"/><circle cx="50" cy="48" 
+
+r="9" fill="${light}"/>`;break;
+    case"star":body=`<path d="M50 10 L60 40 L92 40 L66 58 L76 90 L50 70 L24 90 L34 58 L8 
+
+40 L40 40Z" fill="${col}" stroke="${dark}" stroke-width="3" stroke-
+
+linejoin="round"/>`;break;
+    case"moon":body=`<circle cx="50" cy="52" r="36" fill="${col}" stroke="${dark}" 
+
+stroke-width="3"/><circle cx="38" cy="42" r="8" fill="${dark}" opacity=".45"/><circle 
+
+cx="62" cy="60" r="6" fill="${dark}" opacity=".45"/><circle cx="56" cy="34" r="4" 
+
+fill="${dark}" opacity=".45"/>`;break;
+    case"ghost":body=`<path d="M24 88 L24 48 Q24 20 50 20 Q76 20 76 48 L76 88 L66 78 L58 
+
+88 L50 78 L42 88 L34 78Z" fill="${col}" stroke="${dark}" stroke-width="3" 
+
+opacity=".9"/>`;break;
+    case"flame":body=`<path d="M50 8 Q66 30 62 44 Q78 40 74 22 Q92 44 84 68 Q76 94 50 94 
+
+Q24 94 16 68 Q10 46 26 24 Q28 42 38 46 Q34 28 50 8Z" fill="${col}" stroke="${dark}" 
+
+stroke-width="3"/><path d="M50 50 Q60 62 56 74 Q64 70 62 60 Q70 74 62 84 Q54 90 46 84 Q38 
+
+76 44 62 Q48 66 50 50Z" fill="${light}"/>`;break;
+    default:body=`<circle cx="50" cy="55" r="34" fill="${col}" stroke="${dark}" stroke-
+
+width="3"/>`;
+  }
+  return `<svg class="sprite-svg ${c.anim||'anim-float'}" width="${size}" 
+
+height="${size}" viewBox="0 0 100 100">${body}${eyes}</svg>`;
+}
+function playerSVG(size=130){
+  return `<svg class="sprite-svg anim-float" width="${size}" height="${size}" viewBox="0 
+
+0 100 100">
+  <circle cx="50" cy="26" r="13" fill="#ffd9b3" stroke="#c98d5a" stroke-width="2.5"/>
+  <path d="M37 24 Q50 6 63 24 Q57 16 50 16 Q43 16 37 24Z" fill="#3a2a5c"/>
+  <circle cx="45" cy="26" r="2.4" fill="#111"/><circle cx="55" cy="26" r="2.4" 
+
+fill="#111"/>
+  <path d="M38 22 L62 22" stroke="#00f0ff" stroke-width="3" stroke-linecap="round"/>
+  <path d="M36 40 Q50 34 64 40 L68 78 Q50 86 32 78Z" fill="#1a5fb4" stroke="#0d3a75" 
+
+stroke-width="2.5"/>
+  <path d="M36 40 Q50 34 64 40 L65 48 Q50 42 35 48Z" fill="#eaf6ff" opacity=".9"/>
+  <rect x="44" y="52" width="12" height="18" rx="3" fill="#00f0ff" opacity=".85"/>
+  <path d="M30 44 L18 62" stroke="#1a5fb4" stroke-width="7" stroke-linecap="round"/>
+  <path d="M70 44 L82 62" stroke="#1a5fb4" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="84" cy="64" r="7" fill="#7b2fff" stroke="#00f0ff" stroke-width="2"/>
+  <path d="M40 78 L38 94 M60 78 L62 94" stroke="#123a6b" stroke-width="7" stroke-
+
+linecap="round"/></svg>`;
+}
+/* ================= SOUND MANAGER (Web Audio) ================= */
+const SoundManager={
+  ctx:null,musicTimer:null,musicOn:true,soundOn:true,currentMusic:null,
+  init(){if(!this.ctx){try{this.ctx=new(window.AudioContext||window.webkitAudioContext)
+
+()}catch(e){}}if(this.ctx&&this.ctx.state==="suspended")this.ctx.resume()},
+  tone(freq,dur,type="sine",vol=.18,delay=0,slide=0){
+    if(!this.ctx||!this.soundOn)return;const t=this.ctx.currentTime+delay;
+    const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+    o.type=type;o.frequency.setValueAtTime(freq,t);
+    if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),t+dur);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t
+
++.015);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+    o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+dur+.05);
+  },
+  sfx(name){
+    if(!this.ctx||!this.soundOn)return;
+    const T=this.tone.bind(this);
+    switch(name){
+      case"click":T(700,.08,"square",.1);break;
+      case"correct":T(523,.12,"sine",.2);T(659,.12,"sine",.2,.1);T
+
+(784,.25,"sine",.22,.2);break;
+      case"incorrect":T(220,.25,"sawtooth",.18);T(160,.35,"sawtooth",.18,.12);break;
+      case"attack":T(900,.18,"sawtooth",.16,0,-600);T(1400,.1,"square",.08,.02,-
+
+800);break;
+      case"bossAttack":T(120,.4,"sawtooth",.22,0,-60);T(90,.5,"square",.16,.08,40);break;
+      case"capture":T(500,.15,"sine",.2);T(750,.15,"sine",.2,.15);T
+
+(1000,.3,"sine",.22,.3);T(1250,.4,"sine",.2,.45);break;
+      case"levelup":[523,659,784,1047].forEach((f,i)=>T(f,.18,"triangle",.2,i*.1));break;
+      case"victory":[523,659,784,1047,1319].forEach((f,i)=>T
+
+(f,.22,"triangle",.2,i*.12));break;
+      case"defeat":[400,350,300,220].forEach((f,i)=>T(f,.3,"sawtooth",.16,i*.18));break;
+      case"cutscene":T(440,.4,"sine",.1);T(554,.5,"sine",.08,.2);break;
+      case"bossIntro":T(80,.8,"sawtooth",.24,0,60);T(160,.6,"square",.14,.3,-40);T
+
+(65,1,"sawtooth",.2,.6);break;
+      case"bossDefeat":[880,660,440,220].forEach((f,i)=>T(f,.25,"triangle",.18,i*.15));T
+
+(1100,.6,"sine",.2,.7);break;
+      case"speak":T(300+Math.random()*300,.07,"square",.07);break;
+      case"explore":T(600,.1,"triangle",.12);T(800,.12,"triangle",.12,.09);break;
+      case"unlock":[392,523,659,784].forEach((f,i)=>T(f,.2,"sine",.18,i*.09));break;
+    }
+  },
+  startMusic(key){
+    if(!this.ctx)return;this.stopMusic();this.currentMusic=key;
+    const scales={lab:[262,330,392,523],forest:[294,349,440,587],cave:
+
+[220,262,330,440],city:[330,415,494,659],ocean:[247,294,370,494],space:
+
+[208,262,311,415],quantum:[233,294,349,466],core:[196,233,294,392],menu:
+
+[262,330,392,494]};
+    const scale=scales[key]||scales.menu;const tempo=
+
+{lab:520,forest:620,cave:700,city:420,ocean:760,space:640,quantum:480,core:560,menu:800}
+
+[key]||700;
+    let step=0;
+    this.musicTimer=setInterval(()=>{
+      if(!this.musicOn||!this.ctx)return;
+      const f=scale[step%scale.length]*(step%8>=4?2:1);
+      const t=this.ctx.currentTime;const o=this.ctx.createOscillator
+
+(),g=this.ctx.createGain();
+      o.type=key==="cave"||key==="core"?"sawtooth":"triangle";o.frequency.setValueAtTime
+
+(f,t);
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.05,t
+
++.03);g.gain.exponentialRampToValueAtTime(.001,t+.5);
+      o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+.55);
+      if(step%4===0){const b=this.ctx.createOscillator(),bg=this.ctx.createGain
+
+();b.type="sine";b.frequency.setValueAtTime(f/2,t);bg.gain.setValueAtTime
+
+(0,t);bg.gain.linearRampToValueAtTime(.06,t+.02);bg.gain.exponentialRampToValueAtTime
+
+(.001,t+.4);b.connect(bg);bg.connect(this.ctx.destination);b.start(t);b.stop(t+.45)}
+      step++;
+    },tempo);
+  },
+  stopMusic(){if(this.musicTimer){clearInterval(this.musicTimer);this.musicTimer=null}},
+  toggleSound(){this.soundOn=!this.soundOn;return this.soundOn},
+  toggleMusic(){this.musicOn=!this.musicOn;return this.musicOn}
+};
+/* ================= GAME STATE & SAVE ================= */
+const SAVE_KEY="scienceEscapeSave_v1";
+let S=null;
+function defaultState(){
+  return {player:
+
+{name:"",level:1,exp:0,expNext:100,hp:100,maxHp:100,sp:10,score:0,combo:0,maxCombo:0,corr
+
+ect:0,wrong:0,captured:[],bossesDefeated:[],discovered:[]},
+  areasCleared:[],currentArea:0,usedQ:[],watched:
+
+[],cycles:1,sound:true,music:true,finished:false};
+}
+const SaveManager={
+  save(){if(!
+
+S)return;S.sound=SoundManager.soundOn;S.music=SoundManager.musicOn;S.usedQ=QuestionManage
+
+r.used.slice();try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}},
+  load(){try{const d=localStorage.getItem(SAVE_KEY);return d?JSON.parse(d):null}catch(e)
+
+{return null}},
+  reset(){localStorage.removeItem(SAVE_KEY)},
+  has(){return !!localStorage.getItem(SAVE_KEY)}
+};
+/* ================= QUESTION MANAGER (ห้ามคำถามซ้ำเด็ดขาด) ================= */
+const QuestionManager={
+  all:QUESTIONS,unused:[],used:[],
+  byId(id){return this.all.find(q=>q.id===id)},
+  init(usedIds){this.used=(usedIds||[]).filter(id=>this.byId
+
+(id));this.unused=this.all.filter(q=>!this.used.includes(q.id)).map(q=>q.id)},
+  getNextQuestion(prefs){
+    if(this.unused.length===0)return null;
+    let pool=this.unused;
+    if(prefs&&prefs.length){const f=this.unused.filter(id=>prefs.includes(this.byId
+
+(id).cat));if(f.length)pool=f}
+    const id=pool[Math.floor(Math.random()*pool.length)];
+    this.unused.splice(this.unused.indexOf(id),1);
+    this.used.push(id);
+    SaveManager.save();
+    return this.byId(id);
+  },
+  newCycle(){this.used=[];this.unused=this.all.map(q=>q.id);S.cycles++;SaveManager.save
+
+()},
+  remaining(){return this.unused.length}
+};
+/* ================= UI MANAGER ================= */
+const $=id=>document.getElementById(id);
+const UIManager={
+  show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove
+
+("active"));$(id).classList.add("active");$(id).classList.add("fade-in");setTimeout(()=>
+
+$(id).classList.remove("fade-in"),650)},
+  hud(on){$("hud").classList.toggle("on",on)},
+  updateHUD(){
+    const p=S.player;
+    $("hud-name").textContent=p.name;$("hud-level").textContent=p.level;
+    $("hud-hp").style.width=Math.max(0,p.hp/p.maxHp*100)+"%";$("hud-
+
+hp").classList.toggle("low",p.hp<p.maxHp*.35);
+    $("hud-exp").style.width=Math.min(100,p.exp/p.expNext*100)+"%";
+    $("hud-score").textContent=p.score.toLocaleString();$("hud-
+
+combo").textContent=p.combo;
+  },
+  toast(msg,ms=2200){const t=$("toast");t.textContent=msg;t.classList.add
+
+("on");clearTimeout(this._tt);this._tt=setTimeout(()=>t.classList.remove("on"),ms)},
+  shake(){const g=$("game");g.classList.remove("shake");void 
+
+g.offsetWidth;g.classList.add("shake")},
+  flash(){const f=$("flash");f.classList.add("on");setTimeout(()=>f.classList.remove
+
+("on"),160)},
+  confirm(title,text,onYes){$("confirm-title").textContent=title;$("confirm-
+
+text").textContent=text;$("modal-confirm").classList.add("on");$("confirm-yes").onclick=
+
+()=>{$("modal-confirm").classList.remove("on");SoundManager.sfx("click");onYes()};
+
+$("confirm-no").onclick=()=>{$("modal-confirm").classList.remove("on");SoundManager.sfx
+
+("click")}}
+};
+/* ================= PARTICLES ================= */
+const Particles={
+  cv:null,ctx:null,list:[],color:"#00f0ff",
+  init(){this.cv=$("particleCanvas");this.ctx=this.cv.getContext("2d");this.resize
+
+();window.addEventListener("resize",()=>this.resize());this.loop()},
+  resize(){this.cv.width=innerWidth;this.cv.height=innerHeight},
+  setColor(c){this.color=c},
+  spawn(n=2){for(let i=0;i<n;i++)this.list.push({x:Math.random
+
+()*this.cv.width,y:this.cv.height+10,r:Math.random()*2.4+.8,v:Math.random()*.7+.3,dx:
+
+(Math.random()-.5)*.4,a:Math.random()*.5+.2})},
+  loop(){this.ctx.clearRect(0,0,this.cv.width,this.cv.height);if
+
+(this.list.length<70)this.spawn(1);
+    this.list=this.list.filter(p=>p.y>-20);
+    for(const p of this.list){p.y-=p.v;p.x
+
++=p.dx;this.ctx.globalAlpha=p.a;this.ctx.fillStyle=this.color;this.ctx.beginPath
+
+();this.ctx.arc(p.x,p.y,p.r,0,7);this.ctx.fill()}
+    this.ctx.globalAlpha=1;requestAnimationFrame(()=>this.loop())}
+};
+/* ================= CUTSCENE SCRIPTS ================= */
+const SCIENTIST="ดร.โนวา (หัวหน้านักวิจัย)";
+const CUTSCENES={
+intro:[
+ {sp:"",txt:"YEAR 2089...",big:"YEAR 2089",bg:"black"},
+ {sp:"",txt:"NOVA LAB — ห้องทดลองวิจัยลับที่กำลังสร้างสิ่งมีชีวิตซึ่งเปลี่ยนพลังงานวิทยาศาสตร์ให้เป็นพลังงาน
+
+ชีวิต",visual:"lab",zoom:true},
+ {sp:SCIENTIST,txt:"ทุกอย่างเป็นไปตามแผน...",visual:"lab"},
+ {sp:"",txt:"",fx:"shake",visual:"lab",warn:true,sfx:"bossIntro"},
+ {sp:"",txt:"เครื่องทดลองสั่นรุนแรง ไฟกระพริบ ประตูกักกันทั้งหมดเปิดออก!",fx:"flash",visual:"escape",warn:true},
+ {sp:SCIENTIST,txt:"แย่แล้ว! พวกมันหลุดออกไป!",visual:"escape",fx:"shake"},
+ {sp:SCIENTIST,txt:"เราต้องนำพวกมันกลับมาก่อนที่พลังงานของพวกมันจะเปลี่ยนแปลงระบบนิเวศ!",visual:"lab"},
+ {sp:"",txt:"MISSION: RECOVER ALL LOST EXPERIMENTS",big:"MISSION: RECOVER ALL LOST 
+
+EXPERIMENTS",sfx:"victory"}
+],
+story1:[{sp:SCIENTIST,txt:"สิ่งมีชีวิตแต่ละตัวดูดซับพลังงานจากสภาพแวดล้อมที่มันหลบไป... บางตัวอาจแข็งแกร่งกว่าที่
+
+คิด",visual:"lab"},
+ {sp:"YOU",txt:"ผม/ดิฉันจะจับพวกมันกลับมาให้ครบทุกตัวครับ/ค่ะ!",visual:"lab"}],
+story2:[{sp:SCIENTIST,txt:"ข้อมูลที่เจอในป่าชีวภาพน่าสนใจมาก... สิ่งมีชีวิตพวกนี้ไม่ได้ทำลายระบบนิเวศ แต่กำลัง 'ซ่อมแซม' 
+
+มัน",visual:"forest"},
+ {sp:"YOU",txt:"ซ่อมแซม? หมายความว่ายังไงครับ/คะ?",visual:"forest"},
+ {sp:SCIENTIST,txt:"ยังเร็วไปที่จะบอก... จงใจเดินทางต่อไป แล้วเธอจะเข้าใจเอง",visual:"forest"}],
+story3:[{sp:"YOU",txt:"ผลึกในถ้ำนี้... มันกำลังกรองสารพิษออกจากหิน!",visual:"cave"},
+ {sp:SCIENTIST,txt:"ใช่แล้ว... CRISTALOX กำลังทำหน้าที่ที่มันถูกออกแบบมาให้ทำ",visual:"cave"}],
+story4:[{sp:SCIENTIST,txt:"เมืองไฟฟ้ากลับมาสว่างอีกครั้งเพราะเธอ รู้ไหม... สิ่งมีชีวิตพวกนี้อาจเป็นกุญแจแก้วิกฤตพลังงาน
+
+โลก",visual:"city"}],
+story5:[{sp:"YOU",txt:"ฐานใต้น้ำสงบลงแล้ว... ดูสิ ปะการังกลับมางอกใหม่เร็วมาก",visual:"ocean"},
+ {sp:SCIENTIST,txt:"CORALUX ช่วยฟื้นฟูแนวปะการัง... มันไม่ใช่ภัยคุกคาม มันคือความหวัง",visual:"ocean"}],
+story6:[{sp:SCIENTIST,txt:"เธอสงสัยไหมว่าทำไมเราถึงสร้างพวกมันขึ้นมา?",visual:"space"},
+ {sp:"YOU",txt:"...เพื่อช่วยโลก ใช่ไหมครับ/คะ?",visual:"space"},
+ {sp:SCIENTIST,txt:"พลังงานโลกกำลังหมดลง พวกมันคือเซลล์พลังงานมีชีวิตที่จะเปลี่ยนอนาคต คืนนั้นเราไม่ได้ปล่อยพวกมัน... แต่ระบบถูกโจม
+
+ตี",visual:"space"}],
+story7:[{sp:SCIENTIST,txt:"QUANTUM FACILITY คือแผนสุดท้าย ถ้า GENESIS CORE ยังไม่เสถียร ทุกอย่างอาจพัง
+
+ทลาย",visual:"quantum"},
+ {sp:"YOU",txt:"แล้วใครเป็นคนโจมตีระบบคืนนั้นล่ะครับ/คะ?",visual:"quantum"},
+ {sp:SCIENTIST,txt:"...GENESIS CORE เอง มันตื่นรู้และหวาดกลัว มันไม่ใช่ศัตรู มันแค่กลัว เธอต้องไปหา
+
+มัน",visual:"quantum"}],
+final:[
+ {sp:"",txt:"ระบบ NOVA LAB กลับมาเสถียรอีกครั้ง...",visual:"lab",sfx:"victory"},
+ {sp:"",txt:"สิ่งมีชีวิตทั้งหมดกลับคืนสู่ห้องทดลองอย่างสงบ",visual:"lab"},
+ {sp:SCIENTIST,txt:"ในที่สุด...",visual:"lab"},
+ {sp:SCIENTIST,txt:"เราก็พาพวกมันกลับมาได้",visual:"lab"},
+ {sp:"",txt:"[ เปิดข้อมูลลับระดับสูงสุด — PROJECT GENESIS ]",fx:"flash",visual:"lab"},
+ {sp:SCIENTIST,txt:"สิ่งมีชีวิตเหล่านี้ถูกสร้างขึ้นเพื่อช่วยโลกในอนาคต... เป็นแหล่งพลังงานสะอาดที่มีชีวิต ไม่ใช่อาวุธ",visual:"lab"},
+ {sp:"YOU",txt:"วิทยาศาสตร์ไม่ได้มีไว้เพื่อควบคุมธรรมชาติ...",visual:"lab"},
+ {sp:"YOU",txt:"แต่มันมีไว้เพื่อเข้าใจธรรมชาติ",visual:"lab"},
+ {sp:"",txt:"",big:"SCIENCE ESCAPE",bg:"black"},
+ {sp:"",txt:"",big:"THE LOST EXPERIMENTS",bg:"black"},
+ {sp:"",txt:"MISSION COMPLETE",big:"MISSION COMPLETE",sfx:"victory"}
+]
+};
+/* ================= CUTSCENE MANAGER ================= */
+const CutsceneManager={
+  script:[],idx:0,onDone:null,typing:null,currentId:null,
+  play(id,script,onDone){
+    this.currentId=id;this.script=script;this.idx=0;this.onDone=onDone;
+    UIManager.show("screen-cutscene");UIManager.hud(false);
+    $("cs-skip").classList.toggle("hidden",!S.watched.includes(id));
+    SoundManager.sfx("cutscene");this.showStep();
+  },
+  showStep(){
+    const st=this.script[this.idx];
+    $("cs-warning").style.display=st.warn?"block":"none";
+    const spk=$("cs-speaker");
+    if(st.sp){spk.style.display="block";spk.textContent=st.sp==="YOU"?
+
+((S&&S.player.name)||"คุณ"):st.sp}
+    else spk.style.display="none";
+    const scene=$("cs-scene");
+    scene.style.background=st.bg==="black"?"#000":"radial-gradient(800px 500px at 50% 
+
+30%,rgba(0,240,255,.14),rgba(5,8,18,.4))";
+    $("cs-stage").classList.toggle("zoom",!!st.zoom);
+    $("cs-bigtext").textContent=st.big||"";
+    const vis=$("cs-visual");vis.innerHTML="";
+    if(st.visual==="lab")vis.innerHTML=`<div style="display:flex;gap:24px;align-
+
+items:flex-end">${playerSVG(110)}<div style="width:90px;height:120px;border-
+
+radius:12px;background:linear-gradient(180deg,rgba(0,240,255,.4),rgba
+
+(123,47,255,.4));border:2px solid var(--line);box-shadow:0 0 24px rgba
+
+(0,240,255,.5);animation:pulseS 2s infinite"></div></div>`;
+    else if(st.visual==="escape")vis.innerHTML=`<div style="display:flex;gap:14px">
+
+${creatureSVG(CREATURES[2],70)}${creatureSVG(CREATURES[6],70)}${creatureSVG(CREATURES
+
+[8],70)}</div>`;
+    else if(typeof st.visual==="number"){const a=AREAS[st.visual];if(a)
+
+{scene.style.background=a.grad;const b=a.boss?BOSSES.find
+
+(x=>x.id===a.boss):null;vis.innerHTML=b?`<div style="filter:brightness(.3) drop-shadow(0 
+
+0 30px ${b.color})">${creatureSVG(b,170)}</div>`:playerSVG(120)}}
+    else if(st.visual){const area=AREAS.find(a=>a.music===st.visual);if
+
+(area)scene.style.background=area.grad;vis.innerHTML=playerSVG(120)}
+    if(st.fx==="shake")UIManager.shake();
+    if(st.fx==="flash")UIManager.flash();
+    if(st.sfx)SoundManager.sfx(st.sfx);
+    this.typeText(st.txt);
+  },
+  typeText(txt){
+    clearInterval(this.typing);const el=$("cs-text");el.innerHTML="";let i=0;
+    this.typing=setInterval(()=>{
+      if(i<txt.length){el.innerHTML=txt.slice(0,++i)+'<span 
+
+class="cursor">&nbsp;</span>';if(i%3===0)SoundManager.sfx("speak")}
+      else{clearInterval(this.typing);el.textContent=txt}
+    },28);
+  },
+  next(){
+    const st=this.script[this.idx];
+    if(this.typing&&$("cs-text").innerHTML.includes("cursor")){clearInterval
+
+(this.typing);$("cs-text").textContent=st.txt;return}
+    SoundManager.sfx("click");this.idx++;
+    if(this.idx>=this.script.length)this.finish();else this.showStep();
+  },
+  skip(){SoundManager.sfx("click");this.finish()},
+  finish(){
+    clearInterval(this.typing);
+    if(this.currentId&&!S.watched.includes(this.currentId)){S.watched.push
+
+(this.currentId);SaveManager.save()}
+    $("cs-warning").style.display="none";$("cs-stage").classList.remove("zoom");
+    const cb=this.onDone;this.onDone=null;if(cb)cb();
+  }
+};
+/* ================= MAP MANAGER ================= */
+const MapManager={
+  render(){
+    const grid=$("map-grid");grid.innerHTML="";
+    AREAS.forEach((a,i)=>{
+      const unlocked=i===0||S.areasCleared.includes(i-1);
+      const cleared=S.areasCleared.includes(i);
+      const current=unlocked&&!cleared;
+      const card=document.createElement("div");
+      card.className="area-card glass"+(cleared?" cleared":"")+(current?" 
+
+current":"")+(!unlocked?" locked":"");
+      card.style.background=a.grad;
+      card.innerHTML=`<div class="area-num">AREA ${i+1}</div><div class="area-name">
+
+${a.name}</div>${!unlocked?'<div class="area-lock">🔒</div>':cleared?'<div 
+
+style="color:var(--good);font-size:.8rem">✓ ผ่านแล้ว</div>':'<div style="font-
+
+size:.8rem;color:#9fd8ff">▶ พร้อมสำรวจ</div>'}`;
+      if(unlocked)card.onclick=()=>{SoundManager.sfx("click");GameManager.enterArea(i)};
+      grid.appendChild(card);
+    });
+  },
+  show(){UIManager.show("screen-map");UIManager.hud(true);UIManager.updateHUD
+
+();this.render();SoundManager.startMusic("menu");Particles.setColor("#00f0ff")}
+};
+/* ================= AREA SCENE ================= */
+const AreaManager={
+  current:0,
+  enter(i){
+    this.current=i;const a=AREAS[i];
+    document.body.style.background=a.grad;$("screen-area").style.background=a.grad;
+    Particles.setColor(a.pc);SoundManager.startMusic(a.music);
+    $("area-num").textContent="AREA "+(i+1);$("area-name").textContent=a.name;$("area-
+
+desc").textContent=a.desc;
+    const bossBtn=$("btn-boss");
+    if(a.boss){
+      const capd=a.creatures.filter(id=>S.player.captured.includes(id)).length;
+      const bossDone=S.player.bossesDefeated.includes(a.boss);
+      bossBtn.classList.remove("hidden");
+      bossBtn.disabled=bossDone||capd<a.creatures.length;
+      bossBtn.textContent=bossDone?"👹 BOSS — จับแล้ว ✓":capd<a.creatures.length?`👹 BOSS (จับ
+
+สิ่งมีชีวิตให้ครบก่อน ${capd}/${a.creatures.length})`:"👹 ท้าทาย BOSS!";
+    }else bossBtn.classList.add("hidden");
+    const wrap=$("area-creatures");wrap.innerHTML="";
+    a.creatures.forEach(cid=>{
+      const c=CREATURES.find(x=>x.id===cid);const got=S.player.captured.includes(cid);
+      const d=document.createElement("div");d.className="creature-slot glass";
+      d.innerHTML=`<div class="mini-svg" style="${got?"":"filter:grayscale(1) brightness
+
+(.4)"}">${creatureSVG(c,80)}</div><div style="font-weight:800;font-size:.85rem">${got?
+
+c.name:"???"}</div><div style="font-size:.7rem;color:#9fd8ff">${got?c.type:"ยังไม่ได้
+
+จับ"}</div>`;
+      wrap.appendChild(d);
+    });
+    UIManager.show("screen-area");UIManager.hud(true);UIManager.updateHUD();
+  },
+  explore(){
+    SoundManager.sfx("explore");
+    const a=AREAS[this.current];
+    const notCaught=a.creatures.filter(id=>!S.player.captured.includes(id));
+    const pool=notCaught.length?notCaught:a.creatures;
+    const cid=pool[Math.floor(Math.random()*pool.length)];
+    const base=CREATURES.find(c=>c.id===cid);
+    const lvl=2+this.current*4+Math.floor(Math.random()*3);
+    const enemy=
+
+{...base,level:lvl,maxHp:60+lvl*10+this.current*15,hp:60+lvl*10+this.current*15};
+    BattleManager.start(enemy,{isBoss:false,area:this.current});
+  }
+};
+/* ================= COLLECTION & DATABASE ================= */
+const CollectionManager={
+  show(){
+    const grid=$("collection-grid");grid.innerHTML="";
+    const all=[...CREATURES,...BOSSES.map(b=>
+
+({...b,rarity:"BOSS",ability:b.attack,anim:"anim-pulse"}))];
+    let got=0;
+    all.forEach(c=>{
+      const has=S.player.captured.includes(c.id)||S.player.bossesDefeated.includes(c.id);
+      if(has)got++;
+      const d=document.createElement("div");d.className="mon-card glass"+(has?"":" 
+
+unknown");
+      d.innerHTML=`<div class="mini-svg">${creatureSVG(c,84)}</div>
+      <div style="font-weight:900">${has?c.name:"???"}</div>
+      <div class="tag">${has?c.type:"?????"}</div>
+      ${has?`<div style="font-size:.72rem;margin-top:6px;color:#9fd8ff">${c.rarity}
+
+</div><div style="font-size:.72rem;margin-top:4px;color:#cfe9ff">${c.ability}</div><div 
+
+style="font-size:.7rem;margin-top:4px;color:#8fb8d8">${c.info}</div>`:""}`;
+      grid.appendChild(d);
+    });
+    $("col-count").textContent=`(${got}/${all.length})`;
+    UIManager.show("screen-collection");
+  }
+};
+const DatabaseManager={
+  show(){
+    const list=$("db-list");list.innerHTML="";let got=0;
+    SCI_DB.forEach(e=>{
+      const has=S.player.discovered.includes(e.id);if(has)got++;
+      const d=document.createElement("div");d.className="db-item glass"+(has?"":" 
+
+locked");
+      d.innerHTML=has?`<h4>🔓 ${e.title}</h4><div style="font-
+
+size:.88rem;color:#cfe9ff">${e.text}</div>`:`<h4>🔒 ????????</h4><div style="font-
+
+size:.85rem">ยังไม่ได้ค้นพบ — ตอบคำถามหมวดที่เกี่ยวข้องเพื่อปลดล็อก</div>`;
+      list.appendChild(d);
+    });
+    $("db-count").textContent=`(${got}/${SCI_DB.length})`;
+    UIManager.show("screen-database");
+  },
+  discoverByCat(cat){
+    SCI_DB.forEach(e=>{if(e.cats.includes(cat)&&!S.player.discovered.includes(e.id))
+
+{S.player.discovered.push(e.id);UIManager.toast("📚 ค้นพบข้อมูลใหม่: "+e.title);SaveManager.save
+
+()}});
+  }
+};
+/* ================= BATTLE MANAGER ================= */
+const BattleManager={
+  enemy:null,isBoss:false,boss:null,area:0,busy:false,answered:false,mech:null,turns:0,
+  start(enemy,opt){
+    this.enemy=enemy;this.isBoss=opt.isBoss;this.area=opt.area||0;
+    this.boss=this.isBoss?BOSSES.find(b=>b.id===enemy.id):null;
+    this.busy=false;this.answered=false;this.turns=0;
+    this.mech=this.boss?this.initMech(this.boss.mech):null;
+    UIManager.show("screen-battle");UIManager.hud(true);
+    $("result-banner").classList.remove("on");$("battle-log").innerHTML="";
+    $("enemy-sprite").innerHTML=creatureSVG(enemy,this.isBoss?190:150);
+    $("player-sprite").innerHTML=playerSVG(130);
+    $("enemy-name").textContent=enemy.name;
+    $("enemy-type").textContent=enemy.type;$("enemy-level").textContent=enemy.level;
+    $("player-name").textContent=S.player.name;
+    $("btn-capture").classList.add("hidden");
+    this.renderMech();this.updateBars();
+    this.log(this.isBoss?`👹 ${enemy.name} ปรากฏตัว! เตรียมต่อสู้!`:`พบ ${enemy.name} ป่า! (Lv.
+
+${enemy.level})`);
+    SoundManager.startMusic(AREAS[this.area].music);
+    this.askQuestion();
+  },
+  initMech(kind){
+    const m={kind};
+    if(kind==="heat")m.heat=0;
+    if(kind==="circuit")m.nodes=0;
+    if(kind==="pressure")m.pressure=20;
+    if(kind==="gravity")m.orb="mid";
+    if(kind==="cores"){m.cores=3;m.hits=0}
+    if(kind==="phase")m.phase=0;
+    if(kind==="genesis")m.phase=0;
+    return m;
+  },
+  renderMech(){
+    const p=$("mech-panel");
+    if(!this.mech){p.classList.add("hidden");return}
+    p.classList.remove("hidden");const m=this.mech;
+    if(m.kind==="heat")p.innerHTML=`🔥 HEAT GAUGE<div class="bar" style="margin-
+
+top:6px"><div class="fill heat" style="width:${m.heat}%"></div></div><div style="font-
+
+size:.72rem;margin-top:4px;color:#ffb08a">ตอบผิด = ความร้อนพุ่ง! เต็ม 100% = OVERHEAT MODE</div>`;
+    else if(m.kind==="circuit")p.innerHTML=`⚡ CIRCUIT PUZZLE — เชื่อมวงจรให้ครบ!<div 
+
+class="circuit-nodes">${[0,1,2,3].map(i=>`<div class="cnode 
+
+${i<m.nodes?"on":""}"></div>`).join("")}</div><div style="font-size:.72rem;margin-
+
+top:4px;color:#fff3a0">ตอบถูกครบ 4 จุด = OVERLOAD ATTACK</div>`;
+    else if(m.kind==="pressure")p.innerHTML=`🌊 WATER PRESSURE<div class="bar" 
+
+style="margin-top:6px"><div class="fill press" style="width:
+
+${m.pressure}%"></div></div><div style="font-size:.72rem;margin-top:4px;color:#a0d8ff">
+
+แรงดันเพิ่มทุกเทิร์น! ตอบถูกเพื่อลดแรงดัน</div>`;
+    else if(m.kind==="gravity")p.innerHTML=`🌌 GRAVITY FIELD — ลูกพลังงาน: ${m.orb==="boss"?"🎯 
+
+เข้าเป้า!":m.orb==="player"?"⚠️ ย้อนกลับ!":"⚪ กลางสนาม"}<div style="font-size:.72rem;margin-
+
+top:4px;color:#d0b8ff">ตอบถูก = ควบคุมลูกพลังงานโจมตี / ตอบผิด = มันย้อนมาโจมตีคุณ</div>`;
+    else if(m.kind==="cores")p.innerHTML=`🧬 CELL CORE — ทำลาย Core ให้หมด!<div class="core-
+
+dots">${[0,1,2].map(i=>`<div class="core-dot ${i<m.cores?"":"dead"}"></div>`).join("")}
+
+</div><div style="font-size:.72rem;margin-top:4px;color:#a0ffb8">ตอบถูก 2 ครั้ง = ทำลาย Core 1 ลูก 
+
+(โบนัสดาเมจ)</div>`;
+    else if(m.kind==="phase")p.innerHTML=`🌀 QUANTUM PHASE ${["α","β","γ","δ","Ω"]
+
+[Math.min(m.phase,4)]}<div style="font-size:.72rem;margin-top:4px;color:#ffb8e8">ทุกคำตอบที่ถูก 
+
+= Boss เปลี่ยน Phase สนามรบสลับมิติ!</div>`;
+    else if(m.kind==="genesis"){const names=["🧬 PHASE 1: ชีววิทยา","⚗️ PHASE 2: เคมี","🔭 PHASE 3: 
+
+ฟิสิกส์","🌍 PHASE 4: โลกและอวกาศ","👑 PHASE 5: FINAL SCIENCE CHALLENGE"];p.innerHTML=`<b 
+
+style="color:var(--gold)">${names[Math.min(m.phase,4)]}</b><div style="font-
+
+size:.72rem;margin-top:4px;color:#ffd9a0">GENESIS CORE มี 5 PHASE — เอาชนะให้ครบทุกสาขาวิทยา
+
+ศาสตร์!</div>`}
+  },
+  log(msg){const l=$("battle-log");const d=document.createElement
+
+("div");d.textContent=msg;l.prepend(d);while(l.children.length>6)l.lastChild.remove()},
+  updateBars(){
+    const e=this.enemy,p=S.player;
+    $("enemy-hp").style.width=Math.max(0,e.hp/e.maxHp*100)+"%";
+    $("enemy-hp-text").textContent=Math.max(0,Math.ceil(e.hp))+" / "+e.maxHp;
+    $("player-hp").style.width=Math.max(0,p.hp/p.maxHp*100)+"%";
+    $("player-hp").classList.toggle("low",p.hp<p.maxHp*.35);
+    $("player-hp-text").textContent=Math.max(0,Math.ceil(p.hp))+" / "+p.maxHp;
+    $("player-sp").textContent=p.sp;$("player-combo").textContent=p.combo;
+    UIManager.updateHUD();
+  },
+  prefs(){
+    if(!this.boss)return null;
+    if(this.boss.mech==="genesis"){const pc=[["biology","cell"],["chemistry","matter"],
+
+["physics","motion","force"],["space","solar"],null];return pc[Math.min
+
+(this.mech.phase,4)]}
+    return this.boss.cats;
+  },
+  askQuestion(){
+    if(this.busy)return;
+    this.answered=false;
+    $("btn-nextq").classList.add("hidden");$("q-explain").style.display="none";
+    if(this.mech&&this.mech.kind==="pressure"){this.mech.pressure=Math.min
+
+(100,this.mech.pressure+8);this.renderMech();if(this.mech.pressure>=100)
+
+{this.pressureCrush();return}}
+    const q=QuestionManager.getNextQuestion(this.prefs());
+    if(!q){$("modal-cycle").classList.add("on");return}
+    this.currentQ=q;
+    DatabaseManager.discoverByCat(q.cat);
+    $("q-meta").innerHTML=`<span class="tag">${CATEGORIES[q.cat]}</span><span class="tag" 
+
+style="border-color:rgba(255,210,63,.5);color:var(--gold)">${q.diff.toUpperCase()}
+
+</span><span class="tag">#${q.id}</span><span class="tag" style="margin-left:auto">คงเหลือ 
+
+${QuestionManager.remaining()} ข้อ</span>`;
+    $("q-text").textContent=q.q;
+    const box=$("q-choices");box.innerHTML="";
+    q.c.forEach((c,i)=>{
+      const b=document.createElement("button");b.className="choice-btn";b.textContent=(i
+
++1)+". "+c;
+      b.onclick=()=>this.answer(i,b);box.appendChild(b);
+    });
+  },
+  answer(i,btn){
+    if(this.answered||this.busy)return;
+    this.answered=true;this.turns++;
+    const q=this.currentQ,btns=[...$("q-choices").children];
+    btns.forEach(b=>b.disabled=true);
+    btns[q.a].classList.add("correct");
+    const diffMult={easy:1,medium:2,hard:3}[q.diff]||1;
+    if(i===q.a){
+      SoundManager.sfx("correct");
+      const p=S.player;p.correct++;p.combo++;p.maxCombo=Math.max(p.maxCombo,p.combo);
+      p.score+=100*diffMult+p.combo*10;
+      let dmg=p.sp+p.combo*2+p.level*2+Math.floor(Math.random()*6);
+      dmg=this.applyMechCorrect(dmg);
+      UIManager.toast(`✅ CORRECT! +${100*diffMult+p.combo*10} คะแนน`);
+      this.attackAnim(dmg);
+      this.log(`✅ ถูกต้อง! โจมตี ${this.randAttack()} สร้างความเสียหาย ${dmg} หน่วย`);
+      if(this.isBoss)this.bossSpeak(true);
+      GameManager.gainExp(10*diffMult);
+    }else{
+      btn.classList.add("wrong");
+      SoundManager.sfx("incorrect");
+      const p=S.player;p.wrong++;p.combo=0;
+      $("q-explain").style.display="block";
+      $("q-explain").innerHTML=`❌ <b>INCORRECT!</b> เฉลย: <b>${q.c[q.a]}</b><br>💡 ${q.ex}
+
+`;
+      let dmg=this.enemy.level+6+Math.floor(Math.random()*5);
+      dmg=this.applyMechWrong(dmg);
+      this.enemyAttackAnim(dmg);
+      this.log(`❌ ผิด! ${this.enemy.name} โจมตีกลับ ${dmg} หน่วย`);
+      if(this.isBoss)this.bossSpeak(false);
+    }
+    this.updateBars();SaveManager.save();
+    setTimeout(()=>this.afterAnswer(),this.isBoss?1700:1300);
+  },
+  randAttack(){return["Laser","Plasma","Energy Wave","Photon Beam","Science Pulse"]
+
+[Math.floor(Math.random()*5)]},
+  afterAnswer(){
+    if(this.enemy.hp<=0){this.win();return}
+    if(S.player.hp<=0){this.lose();return}
+    if(!this.isBoss&&this.enemy.hp<=this.enemy.maxHp*.4&&!S.player.captured.includes
+
+(this.enemy.id)){
+      $("btn-capture").classList.remove("hidden");
+      this.log("🎯 สิ่งมีชีวิตอ่อนแอลง! กด CAPTURE เพื่อจับ หรือตอบคำถามต่อ");
+    }
+    this.busy=false;$("btn-nextq").classList.remove("hidden");
+  },
+  /* ---------- BOSS MECHANICS ---------- */
+  applyMechCorrect(dmg){
+    const m=this.mech;if(!m)return dmg;
+    if(m.kind==="heat"){m.heat=Math.max(0,m.heat-12)}
+    else if(m.kind==="circuit"){m.nodes++;if(m.nodes>=4){m.nodes=0;dmg
+
++=60;UIManager.flash();SoundManager.sfx("levelup");this.log("⚡ OVERLOAD ATTACK! วงจรสมบูรณ์ 
+
++60 ความเสียหาย!")}}
+    else if(m.kind==="pressure"){m.pressure=Math.max(0,m.pressure-25)}
+    else if(m.kind==="gravity"){m.orb="boss";dmg+=15;this.log("🌌 คุณควบคุมลูกพลังงานได้! +15")}
+    else if(m.kind==="cores"){m.hits++;if(m.hits>=2&&m.cores>0){m.hits=0;m.cores--;dmg
+
++=40;UIManager.flash();this.log("🧬 ทำลาย Core สำเร็จ! +40 ความเสียหาย!")}}
+    else if(m.kind==="phase"){m.phase++;this.phaseShift()}
+    else if(m.kind==="genesis"){const th=this.enemy.maxHp/5;const np=Math.min
+
+(4,Math.floor((this.enemy.maxHp-this.enemy.hp)/th));if(np>m.phase){m.phase=Math.min
+
+(np,m.phase+1);this.genesisShift()}}
+    this.renderMech();return dmg;
+  },
+  applyMechWrong(dmg){
+    const m=this.mech;if(!m)return dmg;
+    if(m.kind==="heat"){m.heat=Math.min(100,m.heat+34);if(m.heat>=100){m.heat=0;dmg
+
++=25;UIManager.shake();UIManager.flash();SoundManager.sfx("bossAttack");this.log("🔥 
+
+OVERHEAT MODE! PYRAGON ระเบิดความร้อนใส่คุณ +25!")}}
+    else if(m.kind==="circuit"){UIManager.shake();this.log("⚡ วงจรลัด! ประกายไฟกระจาย!")}
+    else if(m.kind==="pressure"){m.pressure=Math.min(100,m.pressure+20)}
+    else if(m.kind==="gravity"){m.orb="player";dmg+=10;this.log("🌌 ลูกพลังงานย้อนกลับมาโจมตีคุณ! 
+
++10")}
+    this.renderMech();return dmg;
+  },
+  pressureCrush(){
+    this.mech.pressure=50;const dmg=20;S.player.hp-=dmg;
+    UIManager.shake();SoundManager.sfx("bossAttack");
+    this.log("🌊 แรงดันน้ำบีบอัด! -20 HP");this.updateBars();
+    if(S.player.hp<=0){this.lose();return}
+    setTimeout(()=>this.askQuestion(),900);
+  },
+  phaseShift(){
+    const bgs=["linear-gradient(160deg,#2e0a24,#5c1a4a)","linear-gradient
+
+(160deg,#0a2e2e,#1a5c5c)","linear-gradient(160deg,#2e2e0a,#5c4a1a)","linear-gradient
+
+(160deg,#0a0a2e,#2a1a5c)","linear-gradient(160deg,#1a0a2e,#4a1a5c)"];
+    $("screen-battle").style.background=bgs[Math.min(this.mech.phase,4)];
+    UIManager.flash();this.log("🌀 QUANTARA เปลี่ยน PHASE! สนามรบสลับมิติ!");
+  },
+  genesisShift(){
+    const bgs=["linear-gradient(160deg,#062b16,#0f5c2e)","linear-gradient
+
+(160deg,#241a3a,#4a2a7a)","linear-gradient(160deg,#0a1a3a,#123a6b)","linear-gradient
+
+(160deg,#120a2e,#2e1a5c)","linear-gradient(160deg,#2e0a0a,#5c1a1a)"];
+    const mus=["forest","cave","lab","space","core"];
+    $("screen-battle").style.background=bgs[this.mech.phase];
+    SoundManager.startMusic(mus[this.mech.phase]);
+    UIManager.flash();UIManager.shake();SoundManager.sfx("bossIntro");
+    this.log(`👑 GENESIS CORE เปลี่ยนเป็น PHASE ${this.mech.phase+1}!`);
+  },
+  bossSpeak(correct){
+    const good=["ไม่เลวหนิ","ใช้ได้"],bad=["เหอะ ทำได้แค่นี้หรอ","กาก"];
+    const txt=correct?good[Math.floor(Math.random()*2)]:bad[Math.floor(Math.random()*2)];
+    const old=document.querySelector(".speech-bubble");if(old)old.remove();
+    const b=document.createElement("div");b.className="speech-bubble";b.textContent=txt;
+    $("enemy-sprite").appendChild(b);
+    const svg=$("enemy-sprite").querySelector(".sprite-svg");
+    if(svg){svg.classList.remove("anim-laugh","anim-mock","anim-approve");void 
+
+svg.offsetWidth;svg.classList.add(correct?"anim-approve":"anim-mock")}
+    SoundManager.sfx("speak");setTimeout(()=>SoundManager.sfx("speak"),120);
+    setTimeout(()=>b.remove(),1900);
+  },
+  /* ---------- ANIMATIONS ---------- */
+  attackAnim(dmg){
+    SoundManager.sfx("attack");
+    const stage=$("battle-stage");
+    const beam=document.createElement("div");beam.className="beam";
+    beam.style.cssText=`left:22%;bottom:180px;width:52%;background:linear-gradient
+
+(90deg,#00f0ff,#ff2fb3);box-shadow:0 0 18px #00f0ff;transform:rotate(-12deg)`;
+    stage.appendChild(beam);setTimeout(()=>beam.remove(),500);
+    const es=$("enemy-sprite");es.classList.add("hit");setTimeout
+
+(()=>es.classList.remove("hit"),450);
+    this.enemy.hp-=dmg;this.updateBars();
+    this.dmgNum(dmg,"#ff5e8a",false);
+  },
+  enemyAttackAnim(dmg){
+    SoundManager.sfx("bossAttack");UIManager.shake();
+    const stage=$("battle-stage");
+    const beam=document.createElement("div");beam.className="beam";
+    beam.style.cssText=`right:22%;top:190px;width:52%;background:linear-gradient
+
+(90deg,#ff3b5c,#ff8a3a);box-shadow:0 0 18px #ff3b5c;transform:rotate(168deg)`;
+    stage.appendChild(beam);setTimeout(()=>beam.remove(),500);
+    const ps=$("player-sprite");ps.classList.add("hit");setTimeout
+
+(()=>ps.classList.remove("hit"),450);
+    S.player.hp-=dmg;this.updateBars();
+    this.dmgNum(dmg,"#5ec8ff",true);
+  },
+  dmgNum(n,color,onPlayer){
+    const d=document.createElement("div");d.className="dmg-
+
+num";d.textContent="-"+n;d.style.color=color;
+    d.style.cssText+=onPlayer?"left:18%;bottom:220px":"right:18%;top:150px";
+    $("battle-stage").appendChild(d);setTimeout(()=>d.remove(),1000);
+  },
+  /* ---------- WIN / LOSE / CAPTURE ---------- */
+  win(){
+    this.busy=true;$("btn-capture").classList.add("hidden");$("btn-nextq").classList.add
+
+("hidden");
+    if(this.isBoss){SoundManager.sfx("bossDefeat");BossManager.defeat
+
+(this.boss,this.area)}
+    else{
+      SoundManager.sfx("victory");
+      S.player.score+=200;GameManager.gainExp(30);
+      this.showResult("VICTORY!","คุณชนะการต่อสู้! +200 คะแนน (สิ่งมีชีวิตหนีไป ลองสำรวจเพื่อจับอีก
+
+ครั้ง)",()=>{AreaManager.enter(this.area)});
+    }
+  },
+  lose(){
+    this.busy=true;SoundManager.sfx("defeat");
+    S.player.hp=S.player.maxHp;S.player.combo=0;SaveManager.save();
+    setTimeout(()=>{$("modal-defeat").classList.add("on")},600);
+  },
+  showResult(text,sub,cb){
+    $("result-text").textContent=text;$("result-sub").textContent=sub||"";
+    $("result-banner").classList.add("on");
+    $("result-ok").onclick=()=>{SoundManager.sfx("click");$("result-
+
+banner").classList.remove("on");$("screen-battle").style.background="";cb()};
+  },
+  capture(){
+    if(this.busy)return;this.busy=true;
+    SoundManager.sfx("capture");UIManager.flash();
+    $("btn-capture").classList.add("hidden");
+    $("capsule-fx").classList.add("on");
+    const es=$("enemy-sprite");es.style.transition="all .8s";es.style.transform="scale
+
+(0)";es.style.opacity="0";
+    this.log("🎯 แคปซูลพลังงานดูดสิ่งมีชีวิตเข้าไป...");
+    setTimeout(()=>{
+      $("capsule-fx").classList.remove("on");
+      CaptureManager.add(this.enemy);
+      this.showResult("CAPTURED! 🎉",`${this.enemy.name} ถูกเพิ่มเข้า Collection แล้ว! +500 
+
+คะแนน`,()=>{es.style.transform="";es.style.opacity="";AreaManager.enter(this.area)});
+    },1800);
+  }
+};
+/* ================= CAPTURE MANAGER ================= */
+const CaptureManager={
+  add(c){
+    if(!S.player.captured.includes(c.id)){S.player.captured.push(c.id)}
+    S.player.score+=500;GameManager.gainExp(50);
+    const a=AREAS[BattleManager.area];
+    if(!a.boss&&a.creatures.every(id=>S.player.captured.includes(id))&&!
+
+S.areasCleared.includes(BattleManager.area)){
+      S.areasCleared.push(BattleManager.area);SoundManager.sfx("unlock");
+      setTimeout(()=>UIManager.toast("🎉 ผ่าน AREA "+(BattleManager.area+1)+" แล้ว! ปลดล็อกพื้นที่
+
+ใหม่!"),2200);
+    }
+    SaveManager.save();
+  }
+};
+/* ================= BOSS MANAGER ================= */
+const BossManager={
+  challenge(areaIdx){
+    const a=AREAS[areaIdx];const boss=BOSSES.find(b=>b.id===a.boss);
+    const intro=[
+      {sp:"",txt:"",bg:"black",warn:true,sfx:"bossIntro"},
+      {sp:"",txt:`พลังงานมหาศาลกำลังตื่นขึ้น...`,visual:areaIdx,bg:""},
+      {sp:boss.name,txt:boss.info,visual:areaIdx,fx:"shake"},
+      {sp:boss.name,txt:"แกคิดจริงหรอว่าจะเอาชนะฉันได้?",visual:areaIdx},
+      {sp:"",txt:"BOSS BATTLE",big:"⚔ BOSS BATTLE ⚔",sfx:"bossIntro"}
+    ];
+    CutsceneManager.play("bossIntro-"+boss.id,intro,()=>{
+      const lvl=boss.level;
+      BattleManager.start({...boss,maxHp:boss.hp,hp:boss.hp,level:lvl},
+
+{isBoss:true,area:areaIdx});
+    });
+  },
+  defeat(boss,areaIdx){
+    const out=[
+      {sp:"",txt:`${boss.name} กำลังหมดพลัง...`,visual:areaIdx,fx:"flash"},
+      {sp:"YOU",txt:"สงบลงเถอะ... เราไม่ได้มาทำร้ายเธอ",visual:areaIdx},
+      {sp:"",txt:"Energy Capsule เปิดออก แสงอบอุ่นห่อหุ้มสิ่งมีชีวิตไว้",visual:areaIdx,sfx:"capture"},
+      {sp:boss.name,txt:"...ขอบคุณ",visual:areaIdx},
+      {sp:"",txt:"CAPTURE SUCCESS",big:"✨ CAPTURE SUCCESS ✨",sfx:"victory"}
+    ];
+    CutsceneManager.play("bossDefeat-"+boss.id,out,()=>{
+      if(!S.player.bossesDefeated.includes(boss.id))S.player.bossesDefeated.push
+
+(boss.id);
+      if(!S.areasCleared.includes(areaIdx))S.areasCleared.push(areaIdx);
+      S.player.score+=2000;GameManager.gainExp(200);
+      S.player.hp=S.player.maxHp;SaveManager.save();
+      SoundManager.sfx("unlock");
+      if(boss.id==="genesis"){GameManager.finalSequence();return}
+      const storyId="story"+(areaIdx+1);
+      const story=CUTSCENES[storyId];
+      if(story)CutsceneManager.play(storyId,story,()=>MapManager.show());
+      else MapManager.show();
+    });
+  }
+};
+/* ================= GAME MANAGER ================= */
+const GameManager={
+  gainExp(n){
+    const p=S.player;p.exp+=n;
+    while(p.exp>=p.expNext){
+      p.exp-=p.expNext;p.level++;p.expNext=p.level*100;
+      p.maxHp+=20;p.hp=p.maxHp;p.sp+=3;
+      SoundManager.sfx("levelup");UIManager.toast(`🎉 LEVEL UP! ตอนนี้ Level ${p.level} — 
+
+HP/SP เพิ่มขึ้น!`);
+    }
+    UIManager.updateHUD();SaveManager.save();
+  },
+  newGame(){
+    S=defaultState();
+    QuestionManager.init([]);
+    SaveManager.save();
+    CutsceneManager.play("intro",CUTSCENES.intro,()=>{
+      UIManager.show("screen-name");UIManager.hud(false);
+      $("name-input").focus();
+    });
+  },
+  continueGame(){
+    const d=SaveManager.load();
+    if(!d){UIManager.toast("ไม่พบข้อมูลบันทึก");return}
+    S=Object.assign(defaultState(),d);
+    S.player=Object.assign(defaultState().player,d.player||{});
+    QuestionManager.init(S.usedQ||[]);
+    SoundManager.soundOn=S.sound!==false;SoundManager.musicOn=S.music!==false;
+    this.refreshToggles();
+    MapManager.show();
+    UIManager.toast("ยินดีต้อนรับกลับมา "+S.player.name+"! 🧪");
+  },
+  enterArea(i){AreaManager.enter(i)},
+  finalSequence(){
+    S.finished=true;SaveManager.save();
+    CutsceneManager.play("final",CUTSCENES.final,()=>this.showEnd());
+  },
+  showEnd(){
+    const p=S.player;
+    const total=p.correct+p.wrong;
+    const acc=total?p.correct/total:0;
+    let pts=p.score+p.captured.length*300+p.bossesDefeated.length*500+p.maxCombo*50;
+    const rank=pts>=12000&&acc>.8?"S":pts>=9000?"A":pts>=6000?"B":pts>=3500?"C":"D";
+    $("rank-badge").textContent=rank;
+    $("end-stats").innerHTML=`
+      <div class="row"><span>🧪 ชื่อนักวิทยาศาสตร์</span><b>${p.name}</b></div>
+      <div class="row"><span>⭐ Level</span><b>${p.level}</b></div>
+      <div class="row"><span>✨ EXP</span><b>${p.exp} / ${p.expNext}</b></div>
+      <div class="row"><span>💠 Score</span><b>${p.score.toLocaleString()}</b></div>
+      <div class="row"><span>⚡ Science Power</span><b>${p.sp}</b></div>
+      <div class="row"><span>✅ ตอบถูก</span><b>${p.correct} ข้อ</b></div>
+      <div class="row"><span>❌ ตอบผิด</span><b>${p.wrong} ข้อ</b></div>
+      <div class="row"><span>🔥 Combo สูงสุด</span><b>x${p.maxCombo}</b></div>
+      <div class="row"><span>🐾 สิ่งมีชีวิตที่จับได้</span><b>${p.captured.length} / 
+
+${CREATURES.length}</b></div>
+      <div class="row"><span>👹 Boss ที่ชนะ</span><b>${p.bossesDefeated.length} / 
+
+${BOSSES.length}</b></div>
+      <div class="row"><span>📚 ข้อมูลวิทยาศาสตร์ที่ค้นพบ</span><b>${p.discovered.length} / 
+
+${SCI_DB.length}</b></div>
+      <div class="row"><span>🔄 Question Cycle</span><b>${S.cycles}</b></div>`;
+    UIManager.show("screen-end");UIManager.hud(false);
+    SoundManager.startMusic("menu");SoundManager.sfx("victory");
+  },
+  refreshToggles(){
+    $("btn-sound").textContent=SoundManager.soundOn?"🔊":"🔇";
+    $("btn-music").textContent=SoundManager.musicOn?"🎵":"🚫";
+  }
+};
+/* ================= EVENT BINDINGS ================= */
+function bind(id,fn){$(id).addEventListener("click",fn)}
+bind("btn-new",()=>{SoundManager.init();SoundManager.sfx("click");
+  if(SaveManager.has())UIManager.confirm("เริ่มเกมใหม่?","ข้อมูลบันทึกเดิมจะถูกลบทั้ง
+
+หมด",()=>GameManager.newGame());
+  else GameManager.newGame();
+});
+bind("btn-continue",()=>{SoundManager.init();SoundManager.sfx
+
+("click");GameManager.continueGame()});
+bind("btn-reset",()=>{SoundManager.sfx("click");UIManager.confirm("ลบข้อมูลบันทึก?","ความคืบหน้าทั้งหมด
+
+จะหายไปและกู้คืนไม่ได้",()=>{SaveManager.reset();UIManager.toast("ลบข้อมูลบันทึกแล้ว");})});
+bind("btn-start-mission",()=>{
+  const n=$("name-input").value.trim();
+  if(!n){UIManager.toast("กรุณากรอกชื่อก่อนนะ!");return}
+  S.player.name=n;SaveManager.save();SoundManager.sfx("victory");
+  CutsceneManager.play("story1",CUTSCENES.story1,()=>MapManager.show());
+});
+bind("cs-next",()=>CutsceneManager.next());
+bind("cs-skip",()=>CutsceneManager.skip());
+bind("btn-explore",()=>AreaManager.explore());
+bind("btn-boss",()=>{if(!$("btn-boss").disabled){SoundManager.sfx
+
+("click");BossManager.challenge(AreaManager.current)}});
+bind("btn-backmap",()=>{SoundManager.sfx("click");MapManager.show()});
+bind("btn-nextq",()=>{SoundManager.sfx("click");BattleManager.askQuestion()});
+bind("btn-capture",()=>BattleManager.capture());
+bind("btn-collection",()=>{SoundManager.sfx("click");CollectionManager.show()});
+bind("btn-database",()=>{SoundManager.sfx("click");DatabaseManager.show()});
+bind("col-close",()=>{SoundManager.sfx("click");MapManager.show()});
+bind("db-close",()=>{SoundManager.sfx("click");MapManager.show()});
+bind("btn-sound",()=>{SoundManager.init();SoundManager.toggleSound
+
+();GameManager.refreshToggles();SaveManager.save();SoundManager.sfx("click")});
+bind("btn-music",()=>{SoundManager.init();const on=SoundManager.toggleMusic
+
+();GameManager.refreshToggles();SaveManager.save();if(on)SoundManager.sfx("click")});
+bind("cycle-yes",()=>{SoundManager.sfx("click");$("modal-cycle").classList.remove
+
+("on");QuestionManager.newCycle();UIManager.toast("🔄 เริ่ม Question Cycle รอบที่ "+S.cycles
+
++"!");BattleManager.askQuestion()});
+bind("defeat-ok",()=>{SoundManager.sfx("click");$("modal-defeat").classList.remove
+
+("on");$("screen-battle").style.background="";MapManager.show()});
+bind("btn-end-map",()=>{SoundManager.sfx("click");MapManager.show()});
+bind("btn-end-new",()=>{SoundManager.sfx("click");UIManager.confirm("เริ่มเกมใหม่?","ข้อมูลบันทึกเดิมจะ
+
+ถูกลบทั้งหมด",()=>GameManager.newGame())});
+/* ================= INIT ================= */
+window.addEventListener("load",()=>{
+  Particles.init();
+  $("avatar-svg").innerHTML=playerSVG(130);
+  if(!SaveManager.has())$("btn-continue").disabled=true;
+  document.body.addEventListener("pointerdown",()=>SoundManager.init(),{once:true});
+});
+</script>
+</body>
+</html>
